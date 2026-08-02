@@ -1,0 +1,65 @@
+services:
+  mysql:
+    image: mysql:8
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD:-password}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-agentaudit}
+      MYSQL_USER: ${MYSQL_USER:-agentaudit}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      AUT_PROVIDER: ${AUT_PROVIDER:-anthropic}
+      AUT_MODEL: ${AUT_MODEL:-}
+      AUT_API_KEY: ${AUT_API_KEY:-}
+      AUT_BASE_URL: ${AUT_BASE_URL:-}
+      JUDGE_PROVIDER: ${JUDGE_PROVIDER:-openai}
+      JUDGE_MODEL: ${JUDGE_MODEL:-}
+      JUDGE_API_KEY: ${JUDGE_API_KEY:-}
+      JUDGE_BASE_URL: ${JUDGE_BASE_URL:-}
+      MYSQL_HOST: mysql
+      MYSQL_PORT: "3306"
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-agentaudit}
+      MYSQL_USER: ${MYSQL_USER:-agentaudit}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-password}
+      HOST: 0.0.0.0
+      PORT: "8000"
+      DEBUG: ${DEBUG:-false}
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "8000:8000"
+    command: >
+      sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        VITE_API_BASE_URL: /api/v1
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  mysql-data:

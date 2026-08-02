@@ -1,0 +1,65 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+.Python
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# --- Node / Frontend ---
+node_modules/
+frontend/dist/
+frontend/build/
+.vite/
+*.local
+npm-debug.log*
+yarn-error.log*
+
+# --- Environment / secrets ---
+.env
+.env.*
+!.env.example
+backend/scripts/research_config.json
+
+# --- Database ---
+*.sqlite3
+*.db
+
+# --- Docker ---
+*.pid
+
+# --- IDE / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Logs ---
+*.log
+logs/
+
+# --- Alembic (keep versions, ignore local sqlite artifacts) ---
+backend/*.sqlite3
+
+# --- Internal working docs (excluded from repo per request) ---
+/prompt.txt
+
+# --- Local tooling config ---
+.claude/
+
+# --- Research batch outputs (generated data, not source) ---
+/research/
+
+# --- TypeScript incremental build cache ---
+*.tsbuildinfo

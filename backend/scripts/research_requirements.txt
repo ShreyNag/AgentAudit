@@ -1,0 +1,7 @@
+# Extra dependencies for scripts/run_benchmark_suite.py and scripts/generate_report_figures.py.
+# Deliberately kept out of pyproject.toml (research tooling, not an app runtime dependency).
+# Install into the same venv the backend already uses:
+#   pip install -r scripts/research_requirements.txt
+pandas~=2.2
+matplotlib~=3.9
+numpy~=1.26
