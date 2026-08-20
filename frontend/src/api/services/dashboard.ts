@@ -21,6 +21,13 @@ export const dashboardService = {
     return response.data.data;
   },
 
+  async executionModeBreakdown(): Promise<GroupedCount[]> {
+    const response = await apiClient.get<StandardResponse<GroupedCount[]>>(
+      "/dashboard/execution-modes",
+    );
+    return response.data.data;
+  },
+
   async evaluatorStatistics(): Promise<EvaluatorStatistic[]> {
     const response = await apiClient.get<StandardResponse<EvaluatorStatistic[]>>(
       "/dashboard/statistics",

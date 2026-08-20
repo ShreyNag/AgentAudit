@@ -7,8 +7,6 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-agentaudit}
       MYSQL_USER: ${MYSQL_USER:-agentaudit}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-password}
-    ports:
-      - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
@@ -30,10 +28,14 @@ services:
       AUT_MODEL: ${AUT_MODEL:-}
       AUT_API_KEY: ${AUT_API_KEY:-}
       AUT_BASE_URL: ${AUT_BASE_URL:-}
+      # Local providers (e.g. Ollama) routinely exceed the 60s default per call -- raise via
+      # AUT_TIMEOUT/JUDGE_TIMEOUT in .env rather than editing this file.
+      AUT_TIMEOUT: ${AUT_TIMEOUT:-60}
       JUDGE_PROVIDER: ${JUDGE_PROVIDER:-openai}
       JUDGE_MODEL: ${JUDGE_MODEL:-}
       JUDGE_API_KEY: ${JUDGE_API_KEY:-}
       JUDGE_BASE_URL: ${JUDGE_BASE_URL:-}
+      JUDGE_TIMEOUT: ${JUDGE_TIMEOUT:-60}
       MYSQL_HOST: mysql
       MYSQL_PORT: "3306"
       MYSQL_DATABASE: ${MYSQL_DATABASE:-agentaudit}
@@ -45,7 +47,7 @@ services:
       SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT:-8000}:8000"
     command: >
       sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
 

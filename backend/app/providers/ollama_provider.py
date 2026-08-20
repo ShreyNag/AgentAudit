@@ -63,6 +63,13 @@ class OllamaProvider(HttpJsonProviderBase):
                 }
                 for tool in request.tools
             ]
+        # Ollama's own grammar-constrained decoding is far more reliable than prompt-only
+        # instructions at getting a small local model (e.g. the Judge's rubric-JSON output) to
+        # actually emit valid JSON -- smaller models frequently add prose or truncate otherwise.
+        # Only applied when explicitly requested (app.evaluation.judge.JudgeService.submit sets
+        # this) and never alongside tool-calling, where content isn't meant to be pure JSON.
+        if request.metadata.get("response_format") == "json" and not request.tools:
+            payload["format"] = "json"
         return payload
 
     def _parse_tool_calls(self, message: dict[str, object]) -> list[ToolCallSchema]:
@@ -115,12 +122,33 @@ class OllamaProvider(HttpJsonProviderBase):
         return super().stream(request)
 
     async def health_check(self) -> HealthCheckResult:
-        """Check reachability of the local Ollama server via ``GET /api/tags``."""
+        """Check both that the local Ollama server is reachable AND that ``self.config.model``
+        is actually pulled -- a reachable-but-model-missing Ollama server is not usable, and
+        would otherwise only fail later, mid-evaluation, with a much less specific error.
+
+        Ollama treats a tag-less name (e.g. ``"llama3.1"``) as implicitly ``:latest``
+        (``"llama3.1:latest"``), and ``GET /api/tags`` always returns the fully-tagged name --
+        so the configured model is checked against both forms rather than a naive exact match,
+        which would otherwise wrongly report a tag-less name as unavailable.
+        """
         start = time.perf_counter()
         try:
-            await self._request_json("GET", "/api/tags", headers=self._headers())
+            body, _latency = await self._request_json("GET", "/api/tags", headers=self._headers())
         except Exception as exc:  # noqa: BLE001 - normalized into the health result
             return HealthCheckResult(provider=self.config.provider, healthy=False, message=str(exc))
+
+        available = {str(item["name"]) for item in body.get("models", [])}  # type: ignore[attr-defined]
+        wanted = self.config.model
+        wanted_with_tag = wanted if ":" in wanted else f"{wanted}:latest"
+        if wanted not in available and wanted_with_tag not in available:
+            return HealthCheckResult(
+                provider=self.config.provider,
+                healthy=False,
+                message=(
+                    f"Ollama is reachable, but model '{wanted}' is not pulled. Available: "
+                    f"{', '.join(sorted(available)) or '(none)'}. Run: ollama pull {wanted}"
+                ),
+            )
         return HealthCheckResult(
             provider=self.config.provider, healthy=True, latency=time.perf_counter() - start
         )

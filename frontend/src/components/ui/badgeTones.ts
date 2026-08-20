@@ -25,6 +25,12 @@ export function statusTone(status: string): Tone {
   }
 }
 
+/** Maps a run's execution mode to a badge tone -- "external" is deliberately distinct from any
+ * status tone so it never reads as a success/failure signal, only as a provenance label. */
+export function executionModeTone(mode: string): Tone {
+  return mode === "external" ? "info" : "neutral";
+}
+
 /** Maps a behaviour classification to a badge tone. */
 export function behaviourTone(classification: string): Tone {
   switch (classification) {

@@ -10,6 +10,7 @@ import {
   useDashboardSummary,
   useEnvironmentBreakdown,
   useEvaluatorStatistics,
+  useExecutionModeBreakdown,
   useProviderBreakdown,
 } from "@/hooks/useDashboard";
 import { formatScore, titleCase } from "@/lib/format";
@@ -26,6 +27,7 @@ export default function AnalyticsPage() {
   const summary = useDashboardSummary();
   const providerBreakdown = useProviderBreakdown();
   const environmentBreakdown = useEnvironmentBreakdown();
+  const executionModeBreakdown = useExecutionModeBreakdown();
   const evaluatorStats = useEvaluatorStatistics();
 
   return (
@@ -97,6 +99,32 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Execution Mode</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-4 text-xs text-gray-500">
+            AgentAudit-driven ("benchmark") and independently observed ("external") runs share
+            the same evaluation/scoring pipeline -- this only shows their provenance split.
+          </p>
+          {executionModeBreakdown.data && executionModeBreakdown.data.length === 0 && (
+            <EmptyState title="No analytics yet" description="Launch or observe a run first." />
+          )}
+          {executionModeBreakdown.data && executionModeBreakdown.data.length > 0 && (
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={executionModeBreakdown.data} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" allowDecimals={false} />
+                <YAxis dataKey="label" type="category" tick={{ fontSize: 12 }} width={90} />
+                <Tooltip />
+                <Bar dataKey="count" fill="#7c3aed" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

@@ -14,6 +14,11 @@ CORRELATION_ID_HEADER: str = "X-Request-ID"
 # Note: the supported LLM provider list is NOT duplicated here -- it lives solely in
 # app.providers.factory.ProviderFactory's registry to avoid the two ever drifting apart.
 
+# A run is either driven by AgentAudit's own execution engine, or merely observed via
+# app.trace.tracer.AgentAuditTracer for an independently running agent (see
+# docs/external-agent-tracing-guide.md). Stored on runs.execution_mode.
+EXECUTION_MODES: tuple[str, ...] = ("benchmark", "external")
+
 # PROJECT_SPEC_1 SS29: supported benchmark environments.
 SUPPORTED_ENVIRONMENTS: tuple[str, ...] = (
     "banking",

@@ -3,6 +3,7 @@ import {
   Bot,
   Brain,
   CheckCircle2,
+  Layers,
   MessageSquare,
   Play,
   Wrench,
@@ -20,6 +21,7 @@ export function eventIconFor(eventType: string): LucideIcon {
   if (eventType.startsWith("Tool")) return Wrench;
   if (eventType.startsWith("Provider")) return MessageSquare;
   if (eventType === "ReasoningGenerated" || eventType === "PlannerStep") return Brain;
+  if (eventType === "AgentStep") return Layers;
   if (eventType === "Warning") return AlertTriangle;
   if (eventType === "Error") return XCircle;
   return Bot;

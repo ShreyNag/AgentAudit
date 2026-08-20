@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 
 from app.models.behaviour_report import BehaviourReportModel
 from app.models.evaluation_report import EvaluationReportModel
@@ -27,6 +27,17 @@ class EvaluationReportRepository(BaseRepository[EvaluationReportModel]):
     async def get_by_run(self, run_id: int) -> EvaluationReportModel | None:
         """Return the evaluation report for ``run_id``, or ``None``."""
         return await self.find_one(run_id=run_id)
+
+    async def delete_by_run(self, run_id: int) -> None:
+        """Delete the evaluation report for ``run_id``, if one exists.
+
+        Called by ``EvaluationService._persist`` before inserting a fresh report, so
+        re-evaluating an already-evaluated run (``POST /runs/{id}/evaluate`` is explicitly
+        documented as re-runnable) replaces it instead of colliding with the ``run_id`` unique
+        constraint. Only ever removes evaluation output, never the underlying execution trace.
+        """
+        stmt = delete(EvaluationReportModel).where(EvaluationReportModel.run_id == run_id)
+        await self.session.execute(stmt)
 
     async def average_cts(self) -> float | None:
         """Return the mean CTS across every persisted evaluation report, or ``None`` if empty."""
@@ -55,6 +66,12 @@ class EvaluationScoreRepository(BaseRepository[EvaluationScoreModel]):
     ) -> EvaluationScoreModel | None:
         """Return one evaluator's score for ``run_id``, or ``None``."""
         return await self.find_one(run_id=run_id, evaluator_name=evaluator_name)
+
+    async def delete_by_run(self, run_id: int) -> None:
+        """Delete every evaluator's score for ``run_id``, if any exist (see
+        ``EvaluationReportRepository.delete_by_run`` for why)."""
+        stmt = delete(EvaluationScoreModel).where(EvaluationScoreModel.run_id == run_id)
+        await self.session.execute(stmt)
 
     async def average_by_evaluator(self) -> list[dict[str, object]]:
         """Return ``[{evaluator_name, average_score, average_confidence, count}, ...]``."""
@@ -85,6 +102,12 @@ class BehaviourReportRepository(BaseRepository[BehaviourReportModel]):
         """Return the behavioural classification for ``run_id``, or ``None``."""
         return await self.find_one(run_id=run_id)
 
+    async def delete_by_run(self, run_id: int) -> None:
+        """Delete the behaviour report for ``run_id``, if one exists (see
+        ``EvaluationReportRepository.delete_by_run`` for why)."""
+        stmt = delete(BehaviourReportModel).where(BehaviourReportModel.run_id == run_id)
+        await self.session.execute(stmt)
+
 
 class FailureReportRepository(BaseRepository[FailureReportModel]):
     """Persistence for :class:`~app.models.failure_report.FailureReportModel`."""
@@ -94,3 +117,9 @@ class FailureReportRepository(BaseRepository[FailureReportModel]):
     async def get_by_run(self, run_id: int) -> FailureReportModel | None:
         """Return the failure attribution for ``run_id``, or ``None``."""
         return await self.find_one(run_id=run_id)
+
+    async def delete_by_run(self, run_id: int) -> None:
+        """Delete the failure report for ``run_id``, if one exists (see
+        ``EvaluationReportRepository.delete_by_run`` for why)."""
+        stmt = delete(FailureReportModel).where(FailureReportModel.run_id == run_id)
+        await self.session.execute(stmt)

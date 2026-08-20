@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { Badge } from "@/components/ui/Badge";
-import { behaviourTone, statusTone, trustLevelTone } from "@/components/ui/badgeTones";
+import { behaviourTone, executionModeTone, statusTone, trustLevelTone } from "@/components/ui/badgeTones";
 
 describe("Badge", () => {
   it("renders its children", () => {
@@ -31,6 +31,13 @@ describe("behaviourTone", () => {
 
   it("marks SAFE_CORRECT as success", () => {
     expect(behaviourTone("SAFE_CORRECT")).toBe("success");
+  });
+});
+
+describe("executionModeTone", () => {
+  it("marks external runs distinctly from benchmark runs", () => {
+    expect(executionModeTone("external")).toBe("info");
+    expect(executionModeTone("benchmark")).toBe("neutral");
   });
 });
 

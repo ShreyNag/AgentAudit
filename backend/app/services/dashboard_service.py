@@ -51,6 +51,11 @@ class DashboardService(BaseService):
         """Return run counts grouped by benchmark environment."""
         return await self._run_repository.count_grouped_by("environment")
 
+    async def execution_mode_breakdown(self) -> list[dict[str, object]]:
+        """Return run counts grouped by execution mode ("benchmark" vs "external"; see
+        ``app.core.constants.EXECUTION_MODES``)."""
+        return await self._run_repository.count_grouped_by("execution_mode")
+
     async def evaluator_statistics(self) -> list[dict[str, object]]:
         """Return average score/confidence per evaluator, across every evaluated run."""
         return await self._evaluation_score_repository.average_by_evaluator()

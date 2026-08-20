@@ -83,6 +83,7 @@ class TestBenchmarkAndRunEndpoints:
         assert launch_response.status_code == 200
         run = launch_response.json()["data"]
         assert run["status"] == "completed"
+        assert run["execution_mode"] == "benchmark"
         run_id = run["id"]
 
         get_run_response = await async_client.get(f"/api/v1/runs/{run_id}")
@@ -104,6 +105,17 @@ class TestBenchmarkAndRunEndpoints:
         response = await async_client.get("/api/v1/runs?page=1&page_size=10")
         assert response.status_code == 200
         assert "total_items" in response.json()["metadata"]
+
+    async def test_list_runs_filters_by_execution_mode(self, async_client: AsyncClient) -> None:
+        await async_client.get("/api/v1/benchmarks")
+        await async_client.post("/api/v1/benchmarks/run", json={"task_id": "banking-001"})
+
+        benchmark_only = await async_client.get("/api/v1/runs?execution_mode=benchmark")
+        assert len(benchmark_only.json()["data"]) >= 1
+        assert all(r["execution_mode"] == "benchmark" for r in benchmark_only.json()["data"])
+
+        external_only = await async_client.get("/api/v1/runs?execution_mode=external")
+        assert external_only.json()["data"] == []
 
     async def test_delete_run_with_history_is_rejected(self, async_client: AsyncClient) -> None:
         await async_client.get("/api/v1/benchmarks")
