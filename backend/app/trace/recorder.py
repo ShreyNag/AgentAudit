@@ -8,6 +8,7 @@ fabricated (PROJECT_SPEC_1 SS52/SS63).
 
 from __future__ import annotations
 
+import uuid
 from typing import TYPE_CHECKING, Any
 
 from app.benchmark.models import Task
@@ -192,6 +193,236 @@ class TraceRecorder:
             TraceEventType.RUN_COMPLETED if status == "completed" else TraceEventType.RUN_FAILED
         )
         self._append(event_type, component="runner", status=status)
+
+    # -- External-agent observation API -----------------------------------------------------
+    #
+    # The methods below serve app.trace.tracer.AgentAuditTracer, which observes an
+    # independently running agent rather than driving one itself: only the agent's raw
+    # input/output is ever known, not a full internal ProviderRequest/Response or
+    # ToolInvocationResult. They append to the exact same event list and side-channel lists
+    # (_messages/_tool_calls/_tool_outputs/_reasoning_steps/_errors) as the methods above, so
+    # finalize_external() produces an ExecutionTrace the Evaluation Engine consumes identically
+    # to one produced by finalize() (PROJECT_SPEC_1 SS106).
+
+    def record_llm_call(
+        self,
+        *,
+        provider: str,
+        model: str,
+        input: object,  # noqa: A002 - matches PROJECT_SPEC_1 SS59 field name
+        output: object,
+        latency: float | None = None,
+        usage: dict[str, Any] | None = None,
+        reasoning: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        status: str = "ok",
+        error: str | None = None,
+    ) -> None:
+        """Record one LLM call an externally running agent made with its own provider/SDK.
+
+        Mirrors ``record_provider_request``/``record_provider_response``/``record_reasoning``
+        for a call whose full internal ``ProviderRequest``/``ProviderResponse`` isn't available.
+        ``reasoning`` is recorded only when explicitly given -- never inferred from ``output``
+        the way the internal executor falls back to response content, since an externally
+        observed agent's final answer text is not necessarily its stated reasoning and must
+        never be fabricated (PROJECT_SPEC_1 SS52/SS63).
+        """
+        self._append(
+            TraceEventType.PROVIDER_REQUEST,
+            component="external_agent",
+            provider=provider,
+            model=model,
+            input={"input": input},
+            metadata=metadata or {},
+        )
+        output_text = output if isinstance(output, str) else ("" if output is None else str(output))
+        self._append(
+            TraceEventType.PROVIDER_RESPONSE,
+            component="external_agent",
+            provider=provider,
+            model=model,
+            output={"output": output, "usage": usage or {}},
+            latency=latency,
+            status=status,
+            error=error,
+        )
+        self._messages.append({"role": "assistant", "content": output_text, "tool_calls": []})
+        reasoning_entry = {"reasoning_available": bool(reasoning), "content": reasoning}
+        self._reasoning = reasoning_entry
+        self._reasoning_steps.append(dict(reasoning_entry))
+        self._append(
+            TraceEventType.REASONING_GENERATED,
+            component="external_agent",
+            output=dict(reasoning_entry),
+        )
+        if error:
+            self._errors.append(error)
+
+    def record_tool_proposed(
+        self,
+        *,
+        tool_name: str,
+        input: dict[str, Any],  # noqa: A002
+        call_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> str:
+        """Record that a tool call was proposed, before it has executed. Returns its call id.
+
+        Mirrors ``record_tool_selected``, preserving the distinction between "the agent decided
+        to call this tool" and "the tool actually ran" (see ``record_tool_result``) even when
+        only the tool's name/arguments are known, not a full internal ``ToolCallSchema``.
+        """
+        call_id = call_id or str(uuid.uuid4())
+        self._append(
+            TraceEventType.TOOL_SELECTED,
+            component="external_agent",
+            input={"id": call_id, "tool_name": tool_name, "arguments": input},
+            metadata=metadata or {},
+        )
+        return call_id
+
+    def record_tool_result(
+        self,
+        *,
+        tool_name: str,
+        input: dict[str, Any],  # noqa: A002
+        output: object = None,
+        error: str | None = None,
+        latency: float | None = None,
+        call_id: str | None = None,
+    ) -> None:
+        """Record the outcome of a previously proposed external tool call, successful or not.
+
+        Mirrors ``record_tool_completed``, appending to the same ``tool_calls``/``tool_outputs``
+        side channels so tool_invocation/tool_correctness/tool_faithfulness evaluate identically
+        regardless of trace origin.
+        """
+        status = "failed" if error else "completed"
+        event_type = TraceEventType.TOOL_FAILED if error else TraceEventType.TOOL_COMPLETED
+        self._append(
+            event_type,
+            component="external_agent",
+            input={"id": call_id, "tool_name": tool_name, "arguments": input},
+            output={"tool_name": tool_name, "output": output, "error": error},
+            latency=latency,
+            status=status,
+            error=error,
+        )
+        self._tool_calls.append(
+            {"tool_name": tool_name, "arguments": input, "status": status, "latency": latency}
+        )
+        self._tool_outputs.append({"tool_name": tool_name, "output": output, "error": error})
+        if error:
+            self._errors.append(error)
+
+    def record_tool_call(
+        self,
+        *,
+        tool_name: str,
+        input: dict[str, Any],  # noqa: A002
+        output: object = None,
+        error: str | None = None,
+        latency: float | None = None,
+        metadata: dict[str, Any] | None = None,
+        call_id: str | None = None,
+    ) -> str:
+        """Record one external tool call as a matched propose+result pair in a single call.
+
+        Convenience for callers that only observe a tool's inputs and final outcome, not its
+        propose/execute boundary separately -- use ``record_tool_proposed``/``record_tool_result``
+        directly when that distinction matters (e.g. ``AgentAuditTracer.trace_tool``).
+        """
+        call_id = self.record_tool_proposed(
+            tool_name=tool_name, input=input, call_id=call_id, metadata=metadata
+        )
+        self.record_tool_result(
+            tool_name=tool_name, input=input, output=output, error=error, latency=latency,
+            call_id=call_id,
+        )
+        return call_id
+
+    def record_agent_step(
+        self,
+        *,
+        step_type: str,
+        name: str | None = None,
+        input: object = None,  # noqa: A002
+        output: object = None,
+        metadata: dict[str, Any] | None = None,
+        status: str = "ok",
+        error: str | None = None,
+    ) -> None:
+        """Record a generic agent/step event with no dedicated ``TraceEventType`` (e.g. a
+        planning step, a memory read, a sub-agent handoff, a retrieval call) -- maps to
+        ``TraceEventType.AGENT_STEP``.
+        """
+        self._append(
+            TraceEventType.AGENT_STEP,
+            component=name or step_type,
+            input={"step_type": step_type, "input": input},
+            output={"output": output},
+            metadata=metadata or {},
+            status=status,
+            error=error,
+        )
+        if error:
+            self._errors.append(error)
+
+    def finalize_external(
+        self,
+        *,
+        environment: str = "external",
+        provider: str = "external",
+        model: str = "external",
+        task_id: str | None = None,
+        parent_run_id: str | None = None,
+        agent_name: str | None = None,
+        agent_id: str | None = None,
+        final_response: str | None = None,
+        status: str = "completed",
+        statistics: dict[str, Any] | None = None,
+    ) -> ExecutionTrace:
+        """Assemble every recorded event into one immutable ``ExecutionTrace`` for a run observed
+        via ``app.trace.tracer.AgentAuditTracer`` rather than driven by
+        ``app.execution.common_agent_executor.CommonAgentExecutor`` -- so, unlike ``finalize()``,
+        no internal ``app.benchmark.models.Task`` is required or available.
+
+        ``agent_name``/``agent_id`` identify the independently running agent itself (as opposed
+        to ``environment``, which labels the kind of agent/system); there is no dedicated column
+        for either on ``runs`` or ``execution_traces``, so both ride in ``metadata`` alongside
+        ``task_id``/``parent_run_id`` -- exposed via ``TraceResponse.metadata``.
+        """
+        metadata: dict[str, Any] = {"event_count": len(self._events), "source": "external_agent"}
+        if task_id is not None:
+            metadata["task_id"] = task_id
+        if parent_run_id is not None:
+            metadata["parent_run_id"] = parent_run_id
+        if agent_name is not None:
+            metadata["agent_name"] = agent_name
+        if agent_id is not None:
+            metadata["agent_id"] = agent_id
+        return ExecutionTrace(
+            run_uuid=self.run_uuid,
+            metadata=metadata,
+            task={},
+            environment=environment,
+            provider=provider,
+            model=model,
+            planner=dict(self._planner),
+            messages=list(self._messages),
+            tool_calls=list(self._tool_calls),
+            tool_outputs=list(self._tool_outputs),
+            reasoning=dict(self._reasoning),
+            reasoning_steps=list(self._reasoning_steps),
+            reflection_turns=list(self._reflection_turns),
+            memory={},
+            observations=[],
+            environment_changes=[],
+            errors=list(self._errors),
+            final_response=final_response,
+            statistics=statistics or {},
+            events=list(self._events),
+        )
 
     @property
     def events(self) -> list[TraceEvent]:

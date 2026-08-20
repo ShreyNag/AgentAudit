@@ -10,6 +10,7 @@ from app.api.dependencies.services import (
     RunRepositoryDep,
     SettingsRepositoryDep,
     SettingsServiceDep,
+    TraceIngestionServiceDep,
     TraceServiceDep,
 )
 
@@ -23,5 +24,6 @@ __all__ = [
     "RunRepositoryDep",
     "SettingsRepositoryDep",
     "SettingsServiceDep",
+    "TraceIngestionServiceDep",
     "TraceServiceDep",
 ]

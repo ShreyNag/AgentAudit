@@ -34,6 +34,7 @@ from app.services.execution_service import ExecutionService
 from app.services.export_service import ExportService
 from app.services.provider_service import ProviderService
 from app.services.settings_service import SettingsService
+from app.services.trace_ingestion_service import TraceIngestionService
 from app.services.trace_service import TraceService
 
 
@@ -59,6 +60,18 @@ def get_execution_service(session: DbSession) -> ExecutionService:
 def get_trace_service(session: DbSession) -> TraceService:
     """Build a :class:`TraceService` bound to the current request's session."""
     return TraceService(TraceRepository(session), TraceEventRepository(session))
+
+
+def get_trace_ingestion_service(session: DbSession) -> TraceIngestionService:
+    """Build a :class:`TraceIngestionService` bound to the current request's session."""
+    return TraceIngestionService(
+        RunRepository(session),
+        TraceRepository(session),
+        TraceEventRepository(session),
+        ToolCallRepository(session),
+        ToolOutputRepository(session),
+        BenchmarkTaskRepository(session),
+    )
 
 
 def get_provider_service(session: DbSession) -> ProviderService:
@@ -107,6 +120,9 @@ def get_settings_repository(session: DbSession) -> SettingsRepository:
 BenchmarkServiceDep = Annotated[BenchmarkService, Depends(get_benchmark_service)]
 ExecutionServiceDep = Annotated[ExecutionService, Depends(get_execution_service)]
 TraceServiceDep = Annotated[TraceService, Depends(get_trace_service)]
+TraceIngestionServiceDep = Annotated[
+    TraceIngestionService, Depends(get_trace_ingestion_service)
+]
 ProviderServiceDep = Annotated[ProviderService, Depends(get_provider_service)]
 EvaluationServiceDep = Annotated[EvaluationService, Depends(get_evaluation_service)]
 ExportServiceDep = Annotated[ExportService, Depends(get_export_service)]

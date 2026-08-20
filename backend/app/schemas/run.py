@@ -29,6 +29,7 @@ class RunResponse(BaseModel):
     judge_model: str | None = None
     environment: str
     status: str
+    execution_mode: str = "benchmark"
     execution_time: float | None = None
     start_time: dt.datetime | None = None
     end_time: dt.datetime | None = None

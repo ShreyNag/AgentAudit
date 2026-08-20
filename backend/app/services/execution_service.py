@@ -31,6 +31,7 @@ from app.repositories.tool_call_repository import ToolCallRepository, ToolOutput
 from app.repositories.trace_event_repository import TraceEventRepository
 from app.repositories.trace_repository import TraceRepository
 from app.services.base import BaseService
+from app.services.trace_persistence import persist_trace_artifacts
 from app.tools.registry import tool_registry
 
 
@@ -145,56 +146,13 @@ class ExecutionService(BaseService):
         )
         assert run_row is not None  # the row we just created cannot vanish mid-request
 
-        await self._trace_repository.save_trace(
-            run_row.id,
-            trace_json=trace.model_dump(mode="json"),
-            planner=trace.planner,
-            reasoning=trace.reasoning,
-            messages=trace.messages,
-            trace_metadata=trace.metadata,
-            statistics=trace.statistics,
-            version=trace.version,
+        await persist_trace_artifacts(
+            trace_repository=self._trace_repository,
+            trace_event_repository=self._trace_event_repository,
+            tool_call_repository=self._tool_call_repository,
+            tool_output_repository=self._tool_output_repository,
+            run_id=run_row.id,
+            trace=trace,
         )
-
-        if trace.events:
-            await self._trace_event_repository.bulk_create(
-                [
-                    {
-                        "run_id": run_row.id,
-                        "event_number": event.sequence_number,
-                        "timestamp": event.timestamp,
-                        "event_type": event.event_type.value,
-                        "component": event.component,
-                        "payload": {
-                            "input": event.input,
-                            "output": event.output,
-                            "error": event.error,
-                        },
-                        "latency": event.latency,
-                        "status": event.status,
-                    }
-                    for event in trace.events
-                ]
-            )
-
-        for order, (call, output) in enumerate(
-            zip(trace.tool_calls, trace.tool_outputs, strict=True), start=1
-        ):
-            call_row = await self._tool_call_repository.create(
-                run_id=run_row.id,
-                tool_name=call["tool_name"],
-                arguments=call["arguments"],
-                validated_arguments=call["arguments"],
-                execution_order=order,
-                latency=call.get("latency"),
-                status=call["status"],
-                error=output.get("error"),
-            )
-            await self._tool_output_repository.create(
-                tool_call_id=call_row.id,
-                output=output.get("output", {}),
-                correct=None,
-                output_metadata={},
-            )
 
         return run_row, result

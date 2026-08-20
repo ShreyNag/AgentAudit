@@ -27,3 +27,10 @@ class TestDashboardEndpoints:
         environments_response = await async_client.get("/api/v1/dashboard/environments")
         assert providers_response.json()["data"] == []
         assert environments_response.json()["data"] == []
+
+    async def test_execution_mode_breakdown_is_an_empty_list_initially(
+        self, async_client: AsyncClient
+    ) -> None:
+        response = await async_client.get("/api/v1/dashboard/execution-modes")
+        assert response.status_code == 200
+        assert response.json()["data"] == []

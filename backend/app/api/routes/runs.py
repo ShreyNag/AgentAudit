@@ -42,14 +42,26 @@ async def list_runs(
     status: str | None = None,
     provider: str | None = None,
     environment: str | None = None,
+    execution_mode: str | None = None,
     page: int = 1,
     page_size: int = 50,
 ) -> StandardResponse[list[RunResponse]]:
-    """List runs with optional filtering, sorting, and pagination (PROJECT_SPEC_2 SS95/SS103)."""
+    """List runs with optional filtering, sorting, and pagination (PROJECT_SPEC_2 SS95/SS103).
+
+    ``execution_mode`` filters to only AgentAudit-driven ("benchmark") or only independently
+    observed ("external") runs -- see ``app.core.constants.EXECUTION_MODES``.
+    """
     runs = await run_repository.list(
-        page=page, page_size=page_size, status=status, provider=provider, environment=environment
+        page=page,
+        page_size=page_size,
+        status=status,
+        provider=provider,
+        environment=environment,
+        execution_mode=execution_mode,
     )
-    total = await run_repository.count(status=status, provider=provider, environment=environment)
+    total = await run_repository.count(
+        status=status, provider=provider, environment=environment, execution_mode=execution_mode
+    )
     return StandardResponse(
         data=[RunResponse.model_validate(run) for run in runs],
         metadata=PaginatedMetadata(

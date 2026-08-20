@@ -10,6 +10,7 @@ from app.trace.models import ExecutionTrace
 from app.trace.recorder import TraceRecorder
 from app.trace.replay import ReplayLoader
 from app.trace.serializer import serialize_trace
+from app.trace.tracer import AgentAuditTracer
 
 __all__ = [
     "TraceEventType",
@@ -17,4 +18,5 @@ __all__ = [
     "TraceRecorder",
     "ReplayLoader",
     "serialize_trace",
+    "AgentAuditTracer",
 ]

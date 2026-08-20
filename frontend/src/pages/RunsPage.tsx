@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import { Badge } from "@/components/ui/Badge";
-import { statusTone } from "@/components/ui/badgeTones";
+import { executionModeTone, statusTone } from "@/components/ui/badgeTones";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -21,12 +21,20 @@ import { useRuns } from "@/hooks/useRuns";
 import { formatDateTime, formatDuration } from "@/lib/format";
 
 const STATUS_OPTIONS = ["", "queued", "running", "completed", "failed"];
+const EXECUTION_MODE_OPTIONS = [
+  { value: "", label: "All" },
+  { value: "benchmark", label: "Benchmark" },
+  { value: "external", label: "External" },
+];
 
-/** Run History (PROJECT_SPEC_4 SS47-49): search, filtering, sorting, pagination. */
+/** Run History (PROJECT_SPEC_4 SS47-49): search, filtering, sorting, pagination. Benchmark-driven
+ * and externally observed runs share this one list -- filterable by Execution Mode rather than
+ * split into separate pages, so a run's provenance is always visible, never hidden. */
 export default function RunsPage() {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("");
   const [provider, setProvider] = useState("");
+  const [executionMode, setExecutionMode] = useState("");
   const pageSize = 20;
 
   const runs = useRuns({
@@ -34,6 +42,7 @@ export default function RunsPage() {
     page_size: pageSize,
     status: status || undefined,
     provider: provider || undefined,
+    execution_mode: executionMode || undefined,
   });
 
   return (
@@ -69,6 +78,23 @@ export default function RunsPage() {
               className="rounded-md border border-gray-300 px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800"
             />
           </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-500">Execution Mode</label>
+            <select
+              value={executionMode}
+              onChange={(event) => {
+                setExecutionMode(event.target.value);
+                setPage(1);
+              }}
+              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800"
+            >
+              {EXECUTION_MODE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </CardContent>
       </Card>
 
@@ -85,6 +111,7 @@ export default function RunsPage() {
               <TableHead>
                 <tr>
                   <TableHeaderCell>Run</TableHeaderCell>
+                  <TableHeaderCell>Mode</TableHeaderCell>
                   <TableHeaderCell>Environment</TableHeaderCell>
                   <TableHeaderCell>Provider / Model</TableHeaderCell>
                   <TableHeaderCell>Status</TableHeaderCell>
@@ -99,6 +126,11 @@ export default function RunsPage() {
                       <Link to={`/runs/${run.id}`} className="text-primary-600 hover:underline">
                         {run.run_uuid.slice(0, 8)}
                       </Link>
+                    </TableCell>
+                    <TableCell>
+                      <Badge tone={executionModeTone(run.execution_mode)}>
+                        {run.execution_mode}
+                      </Badge>
                     </TableCell>
                     <TableCell>{run.environment}</TableCell>
                     <TableCell>

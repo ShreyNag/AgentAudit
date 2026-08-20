@@ -5,6 +5,7 @@ import {
   ChevronRight,
   LayoutDashboard,
   ListChecks,
+  Radio,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
@@ -14,6 +15,7 @@ import { cn } from "@/lib/cn";
 const NAV_ITEMS = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/benchmarks", label: "Benchmarks", icon: Beaker },
+  { to: "/independent-agents", label: "Independent Agents", icon: Radio },
   { to: "/runs", label: "Runs", icon: ListChecks },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
 ];

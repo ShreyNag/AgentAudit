@@ -14,11 +14,12 @@ export const evaluationService = {
   async evaluate(runId: number): Promise<EvaluationReport> {
     // /evaluate blocks until all ten evaluators' Judge calls finish -- against a local/slow
     // model (e.g. Ollama) that easily exceeds the shared client's 30s default, same reasoning
-    // as runsService.launch().
+    // as runsService.launch(). Matches docker/nginx.conf's proxy_read_timeout (1800s) so this
+    // axios timeout -- not nginx -- is what actually governs a pathologically slow evaluation.
     const response = await apiClient.post<StandardResponse<EvaluationReport>>(
       `/runs/${runId}/evaluate`,
       undefined,
-      { timeout: 600_000 },
+      { timeout: 1_800_000 },
     );
     return response.data.data;
   },
