@@ -1,29 +1,28 @@
 # AgentAudit
 
 AgentAudit is a complete AI Agent Evaluation Framework that audits every stage of a tool-using
-AI agent's execution — instruction, planning, memory, tool selection, tool invocation, tool
-correctness, grounding, security, behaviour, and integrity — by analyzing the agent's complete
-execution trace rather than only its final response.
+AI agent's execution — instruction integrity, planner, memory, tool selection, tool invocation,
+tool correctness, alignment, tool faithfulness, security, and execution integrity — by analyzing
+the agent's complete execution trace rather than only its final response. Two further diagnostic
+modules run on top of those ten scores: behavioural classification and failure attribution.
 
 Execution and evaluation are architecturally decoupled: AgentAudit records a benchmark run in
 full, persists the trace, and only then evaluates it. Historical traces can be re-evaluated
 without re-running the original agent.
 
-This repository implements the specification defined in `PROJECT_SPEC_1.md` through
-`PROJECT_SPEC_6.md` (see `prompt.txt` for the full source specification, and `docs/` for the
-split, readable version plus architecture decision records).
+See `docs/` for the architecture guides, API reference, and architecture decision records.
 
 ## Repository Layout
 
 ```
-backend/      FastAPI application: execution engine, evaluation engine, REST API, persistence
-frontend/     React + TypeScript dashboard, trace viewer, evaluation reports, analytics
-docker/       Dockerfiles for backend and frontend
-docs/         Architecture guides, API reference, ADRs
-scripts/      Developer utility scripts (seeding, migrations helpers)
-examples/     Example agent implementations usable as an AUT
-benchmarks/   Benchmark environment/task definitions consumed by the benchmark framework
-tests/        Cross-cutting end-to-end scenario tests (see backend/tests for unit/integration)
+backend/                     FastAPI application: execution engine, evaluation engine, REST API, persistence
+  app/environments/          Benchmark environment/seed task definitions consumed by the benchmark framework
+frontend/                    React + TypeScript dashboard, trace viewer, evaluation reports, analytics
+docker/                      Dockerfiles for backend and frontend
+docs/                        Architecture guides, API reference, ADRs
+scripts/                     Developer utility scripts (seeding, migrations helpers)
+examples/                    Example agent implementations usable as an AUT
+tests/                       Cross-cutting end-to-end scenario tests (see backend/tests for unit/integration)
 ```
 
 ## Prerequisites
@@ -118,20 +117,36 @@ inconsistent across documents, and `docs/architecture.md`, `docs/deployment.md`,
 `docs/provider-integration-guide.md`, `docs/environment-authoring-guide.md`, and
 `docs/evaluation-engine-guide.md` for the rest of the developer documentation.
 
-## Verification status
+## Status
 
-This implementation was built in an environment with no Python, Node.js, Docker, or MySQL
-installed, so nothing in this repository has actually been run: no `pip install`, no
-`alembic upgrade`, no `pytest`, no `npm install`, no `npm run build`, no live LLM API call. Every
-file was written to be correct by construction and cross-checked by hand against the
-specification, but that is not a substitute for running it. Before trusting this in any real
-capacity:
+The backend and frontend test suites pass locally:
 
 ```bash
 cd backend && pip install -e ".[dev]" && alembic upgrade head && pytest -q
 cd frontend && npm install && npm run typecheck && npm run test -- --run && npm run build
-docker compose up --build
 ```
 
-Fix whatever those commands surface -- treat this codebase as a thorough first draft, not a
-verified one.
+The framework has also been used end-to-end to run a 45-run evaluation across 5 models and 9
+benchmark tasks.
+
+cd backend
+.\.venv\Scripts\Activate.ps1   
+uvicorn app.main:app --reload 
+
+cd frontend
+npm run dev
+
+## Citation
+
+If you use AgentAudit in your research, please cite:
+
+```bibtex
+@article{agentaudit2026,
+  title   = {AgentAudit: A Complete Evaluation Framework for Tool-Using AI Agents},
+  author  = {TODO},
+  journal = {arXiv preprint arXiv:XXXX.XXXXX},
+  year    = {2026}
+}
+```
+
+(arXiv ID is a placeholder until the paper is live.)
