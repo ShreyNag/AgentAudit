@@ -102,6 +102,25 @@ each is annotated inline in `backend/pyproject.toml`:
 - `starlette` -- imported directly in `app/middleware/*.py` (not just re-exported through
   `fastapi`), so it's declared explicitly rather than relied on as a transitive dependency.
 
+## Evaluating an Independently Running LLM Agent
+
+AgentAudit can also evaluate an agent it does not execute: a chatbot, RAG pipeline, coding agent,
+or any LangGraph/CrewAI/AutoGen/OpenAI-Agents-SDK/custom agent running in its own process. The
+agent reports its LLM calls and tool calls to `AgentAuditTracer`
+(`backend/app/trace/tracer.py`), which assembles the same `ExecutionTrace` the built-in execution
+engine produces -- so the existing Evaluation Engine consumes either one unmodified. Runs created
+this way are tagged `execution_mode: "external"` (vs `"benchmark"`) everywhere in the API/UI, and
+are never mixed together in a way that implies AgentAudit drove them.
+
+Try it from the frontend: **Independent Agents** in the sidebar
+(`http://localhost:5173/independent-agents`) generates a run ID and copy-pasteable Python/curl
+integration instructions, then shows the run in the normal Runs list (filterable by Execution
+Mode) once your agent submits its trace. The page also shows the exact command for the bundled,
+deterministic demo agent (no API key needed) as a clearly labeled "Development Demo," if you'd
+rather verify the pipeline before wiring up a real agent:
+`python -m examples.external_agent.independent_agent` from `backend/` (see
+`examples/external_agent/README.md`). Full guide: `docs/external-agent-tracing-guide.md`.
+
 ## Design Principles
 
 1. Execution is never modified by evaluation; evaluation starts only after execution finishes.

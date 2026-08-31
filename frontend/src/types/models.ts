@@ -1,5 +1,9 @@
 /** Frontend TypeScript models, mirroring backend response schemas (PROJECT_SPEC_4 SS18). */
 
+/** "benchmark": AgentAudit drove the execution. "external": an independently running agent was
+ * only observed (app.trace.tracer.AgentAuditTracer) -- see docs/external-agent-tracing-guide.md. */
+export type ExecutionMode = "benchmark" | "external";
+
 export interface Run {
   id: number;
   run_uuid: string;
@@ -10,6 +14,7 @@ export interface Run {
   judge_model: string | null;
   environment: string;
   status: string;
+  execution_mode: ExecutionMode;
   execution_time: number | null;
   start_time: string | null;
   end_time: string | null;
@@ -41,6 +46,9 @@ export interface TraceResponse {
   planner: Record<string, unknown>;
   reasoning: Record<string, unknown>;
   messages: Array<Record<string, unknown>>;
+  /** For an externally observed run: may carry agent_name, agent_id, task_id, parent_run_id,
+   * source ("external_agent"). Empty for an AgentAudit-driven benchmark run. */
+  metadata: Record<string, unknown>;
   statistics: Record<string, unknown>;
   version: string;
   created_at: string;

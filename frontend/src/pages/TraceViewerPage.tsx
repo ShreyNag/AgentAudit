@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 
 import { traceService } from "@/api/services/trace";
 import { Badge } from "@/components/ui/Badge";
-import { statusTone } from "@/components/ui/badgeTones";
+import { executionModeTone, statusTone } from "@/components/ui/badgeTones";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -78,6 +78,11 @@ export default function TraceViewerPage() {
           </div>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-6 text-sm">
+          <Stat label="Mode">
+            <Badge tone={executionModeTone(run.data.execution_mode)}>
+              {run.data.execution_mode}
+            </Badge>
+          </Stat>
           <Stat label="Status">
             <Badge tone={statusTone(run.data.status)}>{run.data.status}</Badge>
           </Stat>
@@ -120,9 +125,17 @@ export default function TraceViewerPage() {
             {timeline.isError && (
               <ErrorState error={timeline.error} onRetry={() => timeline.refetch()} />
             )}
-            {filteredEvents.length === 0 && !timeline.isLoading && (
-              <EmptyState title="No matching events" description="Try clearing your filters." />
+            {!timeline.isLoading && !timeline.isError && (timeline.data?.length ?? 0) === 0 && (
+              <EmptyState
+                title="No trace events were recorded for this run"
+                description="This run has no persisted execution trace -- there is nothing to display, not a filtering issue."
+              />
             )}
+            {!timeline.isLoading &&
+              (timeline.data?.length ?? 0) > 0 &&
+              filteredEvents.length === 0 && (
+                <EmptyState title="No matching events" description="Try clearing your filters." />
+              )}
             <div className="max-h-[32rem] space-y-2 overflow-y-auto pr-1">
               {filteredEvents.map((event) => (
                 <TimelineEventCard

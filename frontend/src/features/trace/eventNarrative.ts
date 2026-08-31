@@ -21,8 +21,31 @@ export function describeEvent(event: TraceEvent): EventNarrative {
       return { headline: "Run started." };
 
     case "ProviderRequest": {
-      const messages = (input.messages as unknown[]) ?? [];
-      return { headline: `Sent request to the model (${messages.length} message(s) in context).` };
+      // AgentAudit-driven runs record a real ProviderRequest with a messages: list[...] field
+      // (app.trace.recorder.TraceRecorder.record_provider_request), so this count is accurate.
+      if (Array.isArray(input.messages)) {
+        const messages = input.messages;
+        return {
+          headline: `Sent request to the model (${messages.length} message(s) in context).`,
+        };
+      }
+      // Externally observed agents record whatever raw value they passed as their own input
+      // (app.trace.recorder.TraceRecorder.record_llm_call's `input={"input": input}` -- often a
+      // free-form string, as here). There is no reliable message/turn count to derive from an
+      // arbitrary raw value, so this deliberately makes no numeric claim (previously showed "0
+      // message(s)", implying no context was sent, which was never actually true -- it just
+      // couldn't count a shape it didn't recognize). The exact recorded input is shown in full
+      // below instead of being summarized into a number or a claim about its content.
+      const rawInput = input.input;
+      return {
+        headline: "Sent request to the model (raw input recorded -- exact content below).",
+        detail:
+          typeof rawInput === "string"
+            ? rawInput
+            : rawInput !== undefined
+              ? JSON.stringify(rawInput)
+              : undefined,
+      };
     }
 
     case "ProviderResponse": {
@@ -65,6 +88,18 @@ export function describeEvent(event: TraceEvent): EventNarrative {
       return {
         headline: `Tool "${name}" failed.`,
         detail: (output.error as string | undefined) ?? error ?? undefined,
+      };
+    }
+
+    case "AgentStep": {
+      const stepType = (input.step_type as string) ?? "step";
+      const stepOutput = output.output;
+      return {
+        headline: `Agent step: ${stepType}.`,
+        detail:
+          stepOutput !== null && stepOutput !== undefined && stepOutput !== ""
+            ? JSON.stringify(stepOutput)
+            : undefined,
       };
     }
 

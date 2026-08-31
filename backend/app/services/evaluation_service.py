@@ -27,6 +27,7 @@ from app.models.evaluation_report import EvaluationReportModel
 from app.models.evaluation_score import EvaluationScoreModel
 from app.models.failure_report import FailureReportModel
 from app.models.run import RunModel
+from app.providers.exceptions import ProviderUnavailableError
 from app.providers.factory import ProviderFactory
 from app.repositories.benchmark_repository import BenchmarkTaskRepository
 from app.repositories.evaluation_repository import (
@@ -114,11 +115,30 @@ class EvaluationService(BaseService):
         judge_provider = await ProviderFactory.create_judge(settings)
         judge = JudgeService(judge_provider)
         try:
+            # Fail fast with one clear diagnostic instead of fanning out to all ten evaluators
+            # (each independently retrying up to max_retries times) only to have every one of
+            # them fail the same way -- the exact multi-minute hang-then-500 this was added to
+            # prevent. For OllamaProvider this also confirms the configured model is actually
+            # pulled, not just that the server is reachable (app/providers/ollama_provider.py).
+            health = await judge_provider.health_check()
+            if not health.healthy:
+                raise ProviderUnavailableError(
+                    f"Judge provider '{settings.judge_provider}' ({settings.judge_model}) is "
+                    f"not available: {health.message or 'health check failed.'}"
+                )
             outcome = await self._engine.run(context, judge)
         finally:
             await judge_provider.shutdown()
 
         await self._persist(run_id, outcome)
+        # Record which Judge actually evaluated this run. runs.judge_provider/judge_model are
+        # otherwise only ever set once, at run-creation time (ExecutionService.launch()) --
+        # never for an externally-ingested run (TraceIngestionService.ingest() sets neither),
+        # and never refreshed if .env's JUDGE_* settings changed between launch and evaluation.
+        # This is the one place that reflects the Judge genuinely used, for every execution mode.
+        await self._run_repository.update(
+            run_id, judge_provider=settings.judge_provider, judge_model=settings.judge_model
+        )
         return outcome
 
     async def get_report(self, run_id: int) -> EvaluationReportModel:
@@ -159,6 +179,16 @@ class EvaluationService(BaseService):
         return failure
 
     async def _persist(self, run_id: int, outcome: EvaluationOutcome) -> None:
+        # POST /runs/{id}/evaluate is explicitly documented as re-runnable against a historical
+        # run (PROJECT_SPEC_1 SS98/SS106) -- every one of these four tables has a unique
+        # constraint on run_id, so a second evaluation must replace the first, not collide with
+        # it (previously an unhandled IntegrityError on retry after any earlier successful
+        # evaluation, e.g. a client-perceived timeout that had actually already persisted one).
+        await self._evaluation_report_repository.delete_by_run(run_id)
+        await self._evaluation_score_repository.delete_by_run(run_id)
+        await self._behaviour_report_repository.delete_by_run(run_id)
+        await self._failure_report_repository.delete_by_run(run_id)
+
         overall_reasoning = "\n\n".join(
             f"{result.evaluator_name}: {result.reasoning}" for result in outcome.evaluator_results
         )

@@ -2,22 +2,28 @@ import React from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { ApiError } from "@/api/client";
+import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
-import { behaviourTone, statusTone, trustLevelTone } from "@/components/ui/badgeTones";
+import { behaviourTone, executionModeTone, statusTone, trustLevelTone } from "@/components/ui/badgeTones";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { useBehaviour, useCts, useEvaluateRun, useFailure } from "@/hooks/useEvaluation";
 import { useRun } from "@/hooks/useRuns";
+import { useTrace } from "@/hooks/useTrace";
 import { formatDateTime, formatDuration, formatPercent, formatScore, titleCase } from "@/lib/format";
 
-/** Run Details (PROJECT_SPEC_4 SS50): summary, CTS, behaviour, failure attribution, links out. */
+/** Run Details (PROJECT_SPEC_4 SS50): summary, CTS, behaviour, failure attribution, links out.
+ * Shared by both execution modes -- an externally observed run reads identically to a
+ * benchmark-driven one, with an added banner and Execution Mode badge making the provenance
+ * unmistakable (never implying AgentAudit drove a run it only observed). */
 export default function RunDetailsPage() {
   const { id } = useParams();
   const runId = id ? Number(id) : undefined;
 
   const run = useRun(runId);
+  const trace = useTrace(runId);
   const cts = useCts(runId);
   const behaviour = useBehaviour(runId);
   const failure = useFailure(runId);
@@ -27,9 +33,20 @@ export default function RunDetailsPage() {
   if (run.isError || !run.data) return <ErrorState error={run.error} onRetry={() => run.refetch()} />;
 
   const data = run.data;
+  const isExternal = data.execution_mode === "external";
+  const agentName = trace.data?.metadata.agent_name as string | undefined;
+  const agentId = trace.data?.metadata.agent_id as string | undefined;
 
   return (
     <div className="space-y-6">
+      {isExternal && (
+        <Alert
+          tone="info"
+          title="AgentAudit did not drive this run."
+          description="This trace was produced by an independently running agent and only observed by AgentAudit -- see docs/external-agent-tracing-guide.md."
+        />
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Run {data.run_uuid}</CardTitle>
@@ -47,6 +64,9 @@ export default function RunDetailsPage() {
           </div>
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <Field label="Execution Mode">
+            <Badge tone={executionModeTone(data.execution_mode)}>{data.execution_mode}</Badge>
+          </Field>
           <Field label="Status">
             <Badge tone={statusTone(data.status)}>{data.status}</Badge>
           </Field>
@@ -54,6 +74,12 @@ export default function RunDetailsPage() {
           <Field label="Provider / Model">
             {data.provider} / {data.model}
           </Field>
+          {isExternal && (
+            <>
+              <Field label="Agent">{agentName ?? "—"}</Field>
+              <Field label="Agent ID">{agentId ?? "—"}</Field>
+            </>
+          )}
           <Field label="Judge">
             {data.judge_provider ?? "—"} / {data.judge_model ?? "—"}
           </Field>

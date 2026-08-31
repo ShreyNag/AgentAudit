@@ -26,6 +26,10 @@ class RunModel(Base, TimestampMixin):
     judge_model: Mapped[str | None] = mapped_column(String(100), nullable=True)
     environment: Mapped[str] = mapped_column(String(50), index=True)
     status: Mapped[str] = mapped_column(String(30), index=True, default="queued")
+    # "benchmark" (AgentAudit drove the execution) or "external" (an independently running agent
+    # was only observed -- see app.trace.tracer.AgentAuditTracer). Distinguishes the two without
+    # a second runs-like table (app.core.constants.EXECUTION_MODES).
+    execution_mode: Mapped[str] = mapped_column(String(20), index=True, default="benchmark")
     execution_time: Mapped[float | None] = mapped_column(Float, nullable=True)
     start_time: Mapped[dt.datetime | None] = mapped_column(nullable=True)
     end_time: Mapped[dt.datetime | None] = mapped_column(nullable=True)

@@ -50,6 +50,13 @@ export function useEvaluateRun() {
   return useMutation({
     mutationFn: evaluationService.evaluate,
     onSuccess: (_data, runId) => {
+      // Must include "run" itself: EvaluationService.evaluate_run() writes judge_provider/
+      // judge_model onto the run row as a side effect of evaluating (see
+      // docs/external-agent-tracing-guide.md), but useRun's ["run", runId] cache entry was
+      // fetched before evaluation ran and is never otherwise refetched -- without this, the
+      // Judge field on Run Details keeps showing "-- / --" (its pre-evaluation state) until a
+      // full page reload, even though CTS/scores/behaviour all correctly update immediately.
+      void queryClient.invalidateQueries({ queryKey: ["run", runId] });
       void queryClient.invalidateQueries({ queryKey: ["evaluation-scores", runId] });
       void queryClient.invalidateQueries({ queryKey: ["cts", runId] });
       void queryClient.invalidateQueries({ queryKey: ["behaviour", runId] });

@@ -73,6 +73,20 @@ async def get_environment_breakdown(
     )
 
 
+@router.get("/execution-modes", response_model=StandardResponse[list[GroupedCountResponse]])
+async def get_execution_mode_breakdown(
+    service: DashboardServiceDep,
+) -> StandardResponse[list[GroupedCountResponse]]:
+    """Return run counts grouped by execution mode (AgentAudit-driven vs externally observed)."""
+    breakdown = await service.execution_mode_breakdown()
+    return StandardResponse(
+        data=[
+            GroupedCountResponse(label=str(item["execution_mode"]), count=item["count"])
+            for item in breakdown
+        ]
+    )
+
+
 @router.get("/statistics", response_model=StandardResponse[list[EvaluatorStatisticResponse]])
 async def get_evaluator_statistics(
     service: DashboardServiceDep,

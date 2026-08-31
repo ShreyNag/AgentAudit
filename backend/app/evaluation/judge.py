@@ -125,6 +125,11 @@ class JudgeService:
             system_prompt=system_prompt,
             temperature=0.0,
             max_tokens=self._JUDGE_MAX_TOKENS,
+            # A hint adapters may use to more reliably enforce valid JSON output (currently only
+            # app.providers.ollama_provider.OllamaProvider does, via Ollama's own grammar-
+            # constrained "format": "json" -- prompt-only instructions are unreliable on smaller
+            # local models). Providers that ignore unknown metadata are unaffected.
+            metadata={"response_format": "json"},
         )
         return await self.provider.generate(request)
 

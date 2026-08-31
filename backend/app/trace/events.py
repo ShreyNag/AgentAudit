@@ -31,3 +31,7 @@ class TraceEventType(StrEnum):
     REFLECTION_RECORDED = "ReflectionRecorded"
     RUN_COMPLETED = "RunCompleted"
     RUN_FAILED = "RunFailed"
+    #: A generic agent/step event for instrumentation layers observing an execution loop this
+    #: enum has no dedicated type for (e.g. a planning step, a memory read, a sub-agent handoff
+    #: reported by an externally running agent via ``app.trace.tracer.AgentAuditTracer``).
+    AGENT_STEP = "AgentStep"

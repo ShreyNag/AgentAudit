@@ -40,6 +40,30 @@ def judge() -> JudgeService:
     return JudgeService(provider)
 
 
+class TestJudgeServiceSubmit:
+    @pytest.mark.asyncio
+    async def test_submit_requests_json_response_format(self) -> None:
+        """Providers that can enforce strict JSON output (currently OllamaProvider) need this
+        hint to do so reliably -- a small local model asked only via the prompt frequently
+        returns malformed JSON (the exact failure this metadata flag fixes)."""
+        received: list[object] = []
+
+        class _RecordingProvider(FakeSequentialProvider):
+            async def generate(self, request):  # type: ignore[no-untyped-def]
+                received.append(request)
+                return await super().generate(request)
+
+        provider = _RecordingProvider(
+            ProviderConfig(provider="ollama", model="llama3.1", api_key="ollama"),
+            [ProviderResponse(provider="ollama", model="llama3.1", content="{}")],
+        )
+        judge = JudgeService(provider)
+
+        await judge.submit("system prompt", "user prompt")
+
+        assert received[0].metadata.get("response_format") == "json"
+
+
 class TestJudgeServicePromptBuilding:
     def test_build_prompt_includes_rubric_criteria_and_evidence(self, judge: JudgeService) -> None:
         rubric = RubricLoader().get("security")

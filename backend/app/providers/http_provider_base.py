@@ -204,7 +204,30 @@ class HttpJsonProviderBase(BaseProvider):
                     ) from exc
                 except httpx.ConnectError as exc:
                     raise ProviderConnectionError(
-                        f"Could not connect to {self.config.provider}."
+                        f"Could not connect to {self.config.provider} at {self.base_url}. For a "
+                        "local server (e.g. Ollama), confirm it is running and, if this backend "
+                        "runs in Docker, that the configured base URL is reachable from inside "
+                        "the container (localhost there means the container itself, not the "
+                        "host -- see docs/external-agent-tracing-guide.md)."
+                    ) from exc
+                except httpx.RemoteProtocolError as exc:
+                    # Distinct from ConnectError: the connection succeeded, but the server closed
+                    # it before sending a full response -- e.g. a local model server (Ollama)
+                    # crashed, ran out of memory, or was killed mid-generation. Previously this
+                    # was left as a raw, unmapped httpx exception (violating PROJECT_SPEC_2 SS47:
+                    # adapters must raise only ProviderError subtypes) and surfaced to the client
+                    # as an opaque "An unexpected error occurred" 500 with no useful diagnostic.
+                    raise ProviderConnectionError(
+                        f"{self.config.provider} closed the connection without sending a "
+                        f"response ({exc}). If this is a local model server (e.g. Ollama), it "
+                        "may have crashed, run out of memory, or been killed while generating."
+                    ) from exc
+                except httpx.TransportError as exc:
+                    # Catch-all for any other network-level failure this adapter doesn't yet
+                    # special-case, so it is never left as a raw exception escaping the provider
+                    # layer (same PROJECT_SPEC_2 SS47 requirement as above).
+                    raise ProviderConnectionError(
+                        f"{self.config.provider} request failed: {exc}"
                     ) from exc
                 self._raise_for_status(response)
                 latency = time.perf_counter() - start

@@ -20,6 +20,13 @@ export function useEnvironmentBreakdown() {
   });
 }
 
+export function useExecutionModeBreakdown() {
+  return useQuery({
+    queryKey: ["dashboard", "execution-modes"],
+    queryFn: dashboardService.executionModeBreakdown,
+  });
+}
+
 export function useEvaluatorStatistics() {
   return useQuery({
     queryKey: ["dashboard", "statistics"],

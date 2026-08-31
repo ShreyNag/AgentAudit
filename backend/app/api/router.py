@@ -11,6 +11,7 @@ from app.api.routes import (
     dashboard,
     evaluation,
     exports,
+    external_traces,
     health,
     providers,
     runs,
@@ -25,6 +26,7 @@ api_router.include_router(benchmarks.environments_router)
 api_router.include_router(runs.router)
 api_router.include_router(runs.benchmark_run_router)
 api_router.include_router(traces.router)
+api_router.include_router(external_traces.router)
 api_router.include_router(evaluation.router)
 api_router.include_router(evaluation.rubric_router)
 api_router.include_router(exports.router)

@@ -1,4 +1,4 @@
-import { apiClient } from "@/api/client";
+import { apiClient, ApiError } from "@/api/client";
 import type { StandardResponse } from "@/types/api";
 import type { Run } from "@/types/models";
 
@@ -8,6 +8,7 @@ export interface ListRunsParams {
   status?: string;
   provider?: string;
   environment?: string;
+  execution_mode?: string;
 }
 
 export interface ListRunsResult {
@@ -31,6 +32,21 @@ export const runsService = {
   async get(runId: number): Promise<Run> {
     const response = await apiClient.get<StandardResponse<Run>>(`/runs/${runId}`);
     return response.data.data;
+  },
+
+  /**
+   * Looks up a run by the ``run_uuid`` an external agent's tracer was started with. Returns
+   * ``null`` (rather than throwing) while AgentAudit is still waiting for that agent to submit
+   * its trace -- a 404 here is the expected, normal "not yet observed" state, not a failure.
+   */
+  async getByUuid(runUuid: string): Promise<Run | null> {
+    try {
+      const response = await apiClient.get<StandardResponse<Run>>(`/runs/external/${runUuid}`);
+      return response.data.data;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) return null;
+      throw error;
+    }
   },
 
   async getStatus(runId: number): Promise<string> {
