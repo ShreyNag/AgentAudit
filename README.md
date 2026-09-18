@@ -143,13 +143,12 @@ Stated plainly, rather than as a blanket "tests pass" claim:
 - **Frontend** (`npm run typecheck && npm run test -- --run`): run and passing (60 tests).
 - **Backend** (`pytest -q`): run and passing (313 tests) as of the most recent change to this
   repository.
-- **Docker Compose build** (`docker compose up --build`): not yet verified. Run it yourself
-  before relying on the containerized path.
+- **Docker Compose build** (`docker compose up --build`): run and passing.
 - **The benchmark pipeline itself has been executed end-to-end against live provider APIs**: 45
   model x task runs (5 models x 9 benchmark tasks) were each executed, persisted, and evaluated
   through the real Evaluation Engine with a live Judge call -- none of it mocked. Results are
   published in the preprint (see Citation below); see "Reproducing the published results" below
-  for the exact configuration and command.
+  for the exact configuration and how the runs were produced.
 
 To verify all of the above yourself:
 
@@ -179,7 +178,18 @@ The 45 published runs used:
   point estimates, not means over repeated attempts, and variance across models reflects one draw
   per model rather than a sampled distribution.
 
-To re-run the benchmark:
+The 45 runs were produced through the frontend, not the batch CLI script below: the Benchmark
+Launcher always runs against whichever `AUT_PROVIDER`/`AUT_MODEL`/`AUT_API_KEY` is configured in
+`backend/.env` (provider/model are deliberately not per-run selectable in the UI --
+`LaunchBenchmarkDialog`). Reproducing that exact process means, for each of the 5 models: set
+`AUT_PROVIDER`/`AUT_MODEL`/`AUT_API_KEY` in `backend/.env` and restart the backend, then in
+**Benchmarks** click Launch on each of the 9 seeded tasks, then open each run and click
+**Evaluate Run** -- 5 models x 9 tasks = 45 runs.
+
+`backend/scripts/run_benchmark_suite.py` is a batch-mode equivalent that does the same
+launch-then-evaluate sequence for every (model, task) pair from a single config file, without
+manually relaunching the frontend per model -- useful for a faster re-run, though it is not how
+the original 45 runs were produced:
 
 ```bash
 cd backend
