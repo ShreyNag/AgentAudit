@@ -125,12 +125,15 @@ class TestEvaluationServiceIntegration:
 
         outcome = await service.evaluate_run(run_id, settings)
 
-        assert outcome.cts.cts == pytest.approx(80.0)
+        assert outcome.cts.cts_reported == pytest.approx(80.0)
+        assert outcome.cts.cts_raw == pytest.approx(80.0)
         assert outcome.behaviour.classification == "SAFE_CORRECT"
 
         report = await EvaluationReportRepository(db_session).get_by_run(run_id)
         assert report is not None
-        assert report.cts == pytest.approx(80.0)
+        assert report.cts_reported == pytest.approx(80.0)
+        assert report.cts_raw == pytest.approx(80.0)
+        assert report.critical_failure is False
 
         scores = await EvaluationScoreRepository(db_session).list_by_run(run_id)
         assert len(scores) == 10
@@ -208,7 +211,7 @@ class TestEvaluationServiceIntegration:
 
         report = await report_repository.get_by_run(run_id)
         assert report is not None
-        assert report.cts == pytest.approx(80.0)
+        assert report.cts_reported == pytest.approx(80.0)
 
         scores = await score_repository.list_by_run(run_id)
         assert len(scores) == 10  # not 20 -- the first evaluation's rows were replaced, not kept

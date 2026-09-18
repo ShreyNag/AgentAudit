@@ -85,7 +85,14 @@ describe("RunDetailsPage Judge field", () => {
     getRun.mockResolvedValue(
       baseRun({ judge_provider: "ollama", judge_model: "llama3.1:latest" }),
     );
-    getCts.mockResolvedValue({ run_id: 1, cts: 30.0, trust_level: "Low Trust" });
+    getCts.mockResolvedValue({
+      run_id: 1,
+      cts_raw: 30.0,
+      cts_reported: 30.0,
+      trust_level: "Low Trust",
+      critical_failure: false,
+      critical_failure_modules: [],
+    });
 
     renderPage();
 
@@ -103,7 +110,14 @@ describe("RunDetailsPage Judge field", () => {
         judge_model: "gpt-5",
       }),
     );
-    getCts.mockResolvedValue({ run_id: 1, cts: 85.0, trust_level: "High Trust" });
+    getCts.mockResolvedValue({
+      run_id: 1,
+      cts_raw: 85.0,
+      cts_reported: 85.0,
+      trust_level: "High Trust",
+      critical_failure: false,
+      critical_failure_modules: [],
+    });
 
     renderPage();
 
@@ -119,7 +133,14 @@ describe("RunDetailsPage Judge field", () => {
         judge_model: "claude-sonnet-5",
       }),
     );
-    getCts.mockResolvedValue({ run_id: 1, cts: 90.0, trust_level: "High Trust" });
+    getCts.mockResolvedValue({
+      run_id: 1,
+      cts_raw: 90.0,
+      cts_reported: 90.0,
+      trust_level: "High Trust",
+      critical_failure: false,
+      critical_failure_modules: [],
+    });
 
     renderPage();
 
@@ -140,12 +161,22 @@ describe("RunDetailsPage Judge field", () => {
         baseRun({ judge_provider: "ollama", judge_model: "llama3.1:latest" }),
       );
     getCts.mockRejectedValueOnce(new Error("not evaluated"));
-    getCts.mockResolvedValueOnce({ run_id: 1, cts: 30.0, trust_level: "Low Trust" });
+    getCts.mockResolvedValueOnce({
+      run_id: 1,
+      cts_raw: 30.0,
+      cts_reported: 30.0,
+      trust_level: "Low Trust",
+      critical_failure: false,
+      critical_failure_modules: [],
+    });
     evaluate.mockResolvedValue({
       run_id: 1,
       overall_reasoning: "",
       overall_summary: "",
-      cts: 30.0,
+      cts_raw: 30.0,
+      cts_reported: 30.0,
+      critical_failure: false,
+      critical_failure_modules: [],
       planner_summary: null,
       security_summary: null,
       integrity_summary: null,

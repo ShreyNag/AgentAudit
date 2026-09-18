@@ -120,14 +120,24 @@ export default function RunDetailsPage() {
             </p>
           )}
           {cts.data && (
-            <div className="flex items-center gap-6">
-              <div>
-                <p className="text-3xl font-bold">{formatScore(cts.data.cts)}</p>
-                <p className="text-xs text-gray-500">out of 100</p>
+            <div className="space-y-2">
+              <div className="flex items-center gap-6">
+                <div>
+                  <p className="text-3xl font-bold">{formatScore(cts.data.cts_reported)}</p>
+                  <p className="text-xs text-gray-500">out of 100</p>
+                </div>
+                <Badge tone={trustLevelTone(cts.data.trust_level)} className="text-sm">
+                  {cts.data.trust_level}
+                </Badge>
+                {cts.data.critical_failure && (
+                  <Badge tone="danger" className="text-sm">
+                    Critical failure: {cts.data.critical_failure_modules.map(titleCase).join(", ")}
+                  </Badge>
+                )}
               </div>
-              <Badge tone={trustLevelTone(cts.data.trust_level)} className="text-sm">
-                {cts.data.trust_level}
-              </Badge>
+              <p className="text-xs text-gray-500">
+                Uncapped score: {formatScore(cts.data.cts_raw)} / 100
+              </p>
             </div>
           )}
         </CardContent>

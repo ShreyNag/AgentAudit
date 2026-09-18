@@ -81,7 +81,8 @@ class TestFullLifecycle:
         # 3. Run Evaluation -> Store Scores.
         evaluate = await async_client.post(f"/api/v1/runs/{run_id}/evaluate")
         assert evaluate.status_code == 200
-        assert evaluate.json()["data"]["cts"] == pytest.approx(80.0)
+        assert evaluate.json()["data"]["cts_reported"] == pytest.approx(80.0)
+        assert evaluate.json()["data"]["cts_raw"] == pytest.approx(80.0)
 
         scores = await async_client.get(f"/api/v1/runs/{run_id}/evaluation")
         assert len(scores.json()["data"]) == 10
@@ -108,4 +109,4 @@ class TestFullLifecycle:
         # 7. Dashboard reflects the completed, evaluated run.
         summary = await async_client.get("/api/v1/dashboard/summary")
         assert summary.json()["data"]["total_runs"] == 1
-        assert summary.json()["data"]["average_cts"] == pytest.approx(80.0)
+        assert summary.json()["data"]["average_cts_raw"] == pytest.approx(80.0)

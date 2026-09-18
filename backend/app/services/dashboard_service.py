@@ -34,13 +34,13 @@ class DashboardService(BaseService):
         completed_runs = await self._run_repository.count(status="completed")
         failed_runs = await self._run_repository.count(status="failed")
         running_runs = await self._run_repository.count(status="running")
-        average_cts = await self._evaluation_report_repository.average_cts()
+        average_cts_raw = await self._evaluation_report_repository.average_cts_raw()
         return {
             "total_runs": total_runs,
             "completed_runs": completed_runs,
             "failed_runs": failed_runs,
             "running_runs": running_runs,
-            "average_cts": average_cts,
+            "average_cts_raw": average_cts_raw,
         }
 
     async def provider_breakdown(self) -> list[dict[str, object]]:

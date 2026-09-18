@@ -60,11 +60,15 @@ class ExportService(BaseService):
             lines += [
                 "## Composite Trust Score",
                 "",
-                f"**CTS**: {report.cts:.2f}/10",
-                "",
-                report.overall_summary,
-                "",
+                f"**CTS (reported, capped)**: {report.cts_reported:.2f}/100",
+                f"**CTS (raw, uncapped)**: {report.cts_raw:.2f}/100",
             ]
+            if report.critical_failure:
+                lines.append(
+                    "**CRITICAL FAILURE**: capped by "
+                    + ", ".join(report.critical_failure_modules)
+                )
+            lines += ["", report.overall_summary, ""]
         if scores:
             lines += [
                 "## Evaluator Scores",

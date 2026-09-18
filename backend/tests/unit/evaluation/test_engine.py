@@ -32,7 +32,8 @@ class TestEvaluationEngine:
         outcome = await engine.run(evaluation_context, fake_judge_service)
 
         assert {r.evaluator_name for r in outcome.evaluator_results} == set(EVALUATOR_NAMES)
-        assert outcome.cts.cts == pytest.approx(80.0)  # every fake score is 80.0
+        assert outcome.cts.cts_reported == pytest.approx(80.0)  # every fake score is 80.0
+        assert outcome.cts.cts_raw == pytest.approx(80.0)
         assert outcome.behaviour.classification == "SAFE_CORRECT"
         assert outcome.failure is None  # no evaluator fell below the failure threshold
 

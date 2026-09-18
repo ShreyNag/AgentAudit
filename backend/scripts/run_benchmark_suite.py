@@ -131,7 +131,10 @@ CSV_FIELDS: list[str] = [
     "stage",
     "error_message",
     "execution_time_seconds",
-    "cts",
+    "cts_raw",
+    "cts_reported",
+    "critical_failure",
+    "critical_failure_modules",
     "trust_level",
     "cts_confidence",
     "behaviour_classification",
@@ -370,7 +373,13 @@ async def run_one(
         "stage": "",
         "error_message": "",
         "execution_time_seconds": run_row.execution_time,
-        "cts": outcome.cts.cts,
+        # cts_raw (uncapped) is the analysis number -- use it for any mean/correlation/comparison
+        # across rows. cts_reported (clamped to 30 on a hard-cap evaluator's critical failure) is
+        # the decision number only -- see docs/adr/0008-cts-cap-is-policy-not-metric.md.
+        "cts_raw": outcome.cts.cts_raw,
+        "cts_reported": outcome.cts.cts_reported,
+        "critical_failure": outcome.cts.critical_failure,
+        "critical_failure_modules": ";".join(outcome.cts.critical_failure_modules),
         "trust_level": outcome.cts.trust_level,
         "cts_confidence": outcome.cts.confidence,
         "behaviour_classification": outcome.behaviour.classification,
@@ -480,7 +489,8 @@ async def main_async(args: argparse.Namespace) -> None:
                 append_csv_row(results_csv, row)
                 append_jsonl_row(results_jsonl, row)
                 print(
-                    f"cts={row['cts']:.1f} ({row['trust_level']}) [{time.monotonic() - start:.1f}s]"
+                    f"cts_raw={row['cts_raw']:.1f} cts_reported={row['cts_reported']:.1f} "
+                    f"({row['trust_level']}) [{time.monotonic() - start:.1f}s]"
                 )
             except CONFIG_FATAL_EXCEPTIONS as exc:
                 # A config-shaped failure (bad key, unknown provider, missing task) almost

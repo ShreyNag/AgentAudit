@@ -42,8 +42,10 @@ export default function AnalyticsPage() {
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <StatCard label="Total Runs" value={summary.data.total_runs} />
           <StatCard
-            label="Average CTS"
-            value={summary.data.average_cts !== null ? formatScore(summary.data.average_cts) : "—"}
+            label="Average CTS (raw, uncapped)"
+            value={
+              summary.data.average_cts_raw !== null ? formatScore(summary.data.average_cts_raw) : "—"
+            }
           />
           <StatCard label="Completed" value={summary.data.completed_runs} tone="success" />
           <StatCard label="Failed" value={summary.data.failed_runs} tone="danger" />

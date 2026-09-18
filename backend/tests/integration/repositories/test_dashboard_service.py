@@ -58,7 +58,7 @@ class TestDashboardService:
         assert summary["completed_runs"] == 1
         assert summary["failed_runs"] == 1
         assert summary["running_runs"] == 1
-        assert summary["average_cts"] is None  # no evaluation reports yet
+        assert summary["average_cts_raw"] is None  # no evaluation reports yet
 
     async def test_provider_and_environment_breakdowns_group_correctly(
         self, db_session: AsyncSession

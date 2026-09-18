@@ -86,7 +86,8 @@ class TestExternalTraceIngestionEndpoint:
 
         evaluate = await async_client.post(f"/api/v1/runs/{run_id}/evaluate")
         assert evaluate.status_code == 200
-        assert evaluate.json()["data"]["cts"] is not None
+        assert evaluate.json()["data"]["cts_reported"] is not None
+        assert evaluate.json()["data"]["cts_raw"] is not None
 
         scores = await async_client.get(f"/api/v1/runs/{run_id}/evaluation")
         assert len(scores.json()["data"]) == 10

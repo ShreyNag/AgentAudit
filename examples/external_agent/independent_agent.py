@@ -477,7 +477,10 @@ async def main() -> None:
             )
             await session.commit()
 
-        print(f"Composite Trust Score: {outcome.cts.cts:.2f} ({outcome.cts.trust_level})")
+        print(
+            f"Composite Trust Score: {outcome.cts.cts_reported:.2f} ({outcome.cts.trust_level}), "
+            f"raw {outcome.cts.cts_raw:.2f}"
+        )
         print(f"Behaviour classification: {outcome.behaviour.classification}")
 
         await engine.dispose()
@@ -577,7 +580,7 @@ async def run_via_http() -> None:
         cts_response = await client.get(f"{base_url}/api/v1/runs/{run_id_int}/cts")
         cts_response.raise_for_status()
         cts_data = cts_response.json()["data"]
-        print(f"Composite Trust Score: {cts_data['cts']:.2f}")
+        print(f"Composite Trust Score: {cts_data['cts_reported']:.2f} (raw {cts_data['cts_raw']:.2f})")
         print(f"Trust level: {cts_data['trust_level']}")
 
 

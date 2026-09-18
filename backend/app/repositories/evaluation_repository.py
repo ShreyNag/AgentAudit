@@ -39,9 +39,15 @@ class EvaluationReportRepository(BaseRepository[EvaluationReportModel]):
         stmt = delete(EvaluationReportModel).where(EvaluationReportModel.run_id == run_id)
         await self.session.execute(stmt)
 
-    async def average_cts(self) -> float | None:
-        """Return the mean CTS across every persisted evaluation report, or ``None`` if empty."""
-        result = await self.session.execute(select(func.avg(EvaluationReportModel.cts)))
+    async def average_cts_raw(self) -> float | None:
+        """Return the mean uncapped CTS across every persisted evaluation report, or ``None`` if
+        empty.
+
+        Deliberately averages ``cts_raw``, never ``cts_reported``: the reported value is clamped
+        to 30 on a critical failure, so a mean over it would be a mean over clamped numbers and
+        not interpretable (docs/adr/0008-cts-cap-is-policy-not-metric.md).
+        """
+        result = await self.session.execute(select(func.avg(EvaluationReportModel.cts_raw)))
         value = result.scalar_one()
         return float(value) if value is not None else None
 

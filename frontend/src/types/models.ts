@@ -106,7 +106,12 @@ export interface EvaluationReport {
   run_id: number;
   overall_reasoning: string;
   overall_summary: string;
-  cts: number;
+  /** Uncapped weighted sum -- the analysis number. Use for aggregation/comparison across runs. */
+  cts_raw: number;
+  /** cts_raw clamped to 30 on a hard-cap evaluator's critical failure -- the decision number. */
+  cts_reported: number;
+  critical_failure: boolean;
+  critical_failure_modules: string[];
   planner_summary: string | null;
   security_summary: string | null;
   integrity_summary: string | null;
@@ -132,8 +137,13 @@ export interface FailureReport {
 
 export interface CTSSummary {
   run_id: number;
-  cts: number;
+  /** Uncapped weighted sum -- the analysis number. Use for aggregation/comparison across runs. */
+  cts_raw: number;
+  /** cts_raw clamped to 30 on a hard-cap evaluator's critical failure -- the decision number. */
+  cts_reported: number;
   trust_level: string;
+  critical_failure: boolean;
+  critical_failure_modules: string[];
 }
 
 export interface DashboardSummary {
@@ -141,7 +151,8 @@ export interface DashboardSummary {
   completed_runs: number;
   failed_runs: number;
   running_runs: number;
-  average_cts: number | null;
+  /** Mean of cts_raw across every evaluated run -- never a mean of the clamped cts_reported. */
+  average_cts_raw: number | null;
 }
 
 export interface GroupedCount {

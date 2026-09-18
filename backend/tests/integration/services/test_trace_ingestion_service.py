@@ -222,7 +222,8 @@ class TestTraceIngestionService:
         outcome = await engine.run(context, judge)
 
         assert len(outcome.evaluator_results) == 10
-        assert outcome.cts.cts is not None
+        assert outcome.cts.cts_reported is not None
+        assert outcome.cts.cts_raw is not None
         assert outcome.behaviour.classification
 
     async def test_evaluation_service_evaluate_run_works_unmodified_on_an_ingested_run(
@@ -262,6 +263,7 @@ class TestTraceIngestionService:
 
         outcome = await evaluation_service.evaluate_run(run_row.id, settings)
 
-        assert outcome.cts.cts is not None
+        assert outcome.cts.cts_reported is not None
         report = await evaluation_service.get_report(run_row.id)
-        assert report.cts == outcome.cts.cts
+        assert report.cts_reported == outcome.cts.cts_reported
+        assert report.cts_raw == outcome.cts.cts_raw

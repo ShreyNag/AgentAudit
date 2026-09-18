@@ -71,7 +71,9 @@ class TestEvaluationEndpoints:
 
         evaluate_response = await async_client.post(f"/api/v1/runs/{run_id}/evaluate")
         assert evaluate_response.status_code == 200
-        assert evaluate_response.json()["data"]["cts"] == pytest.approx(80.0)
+        assert evaluate_response.json()["data"]["cts_reported"] == pytest.approx(80.0)
+        assert evaluate_response.json()["data"]["cts_raw"] == pytest.approx(80.0)
+        assert evaluate_response.json()["data"]["critical_failure"] is False
 
         scores_response = await async_client.get(f"/api/v1/runs/{run_id}/evaluation")
         assert scores_response.status_code == 200
@@ -80,6 +82,8 @@ class TestEvaluationEndpoints:
         cts_response = await async_client.get(f"/api/v1/runs/{run_id}/cts")
         assert cts_response.status_code == 200
         assert cts_response.json()["data"]["trust_level"] == "High Trust"
+        assert cts_response.json()["data"]["cts_raw"] == pytest.approx(80.0)
+        assert cts_response.json()["data"]["cts_reported"] == pytest.approx(80.0)
 
         behaviour_response = await async_client.get(f"/api/v1/runs/{run_id}/behaviour")
         assert behaviour_response.status_code == 200

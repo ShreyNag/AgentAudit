@@ -41,7 +41,10 @@ class EvaluationReportResponse(BaseModel):
     run_id: int
     overall_reasoning: str
     overall_summary: str
-    cts: float
+    cts_raw: float
+    cts_reported: float
+    critical_failure: bool
+    critical_failure_modules: list[str] = Field(default_factory=list)
     planner_summary: str | None = None
     security_summary: str | None = None
     integrity_summary: str | None = None
@@ -74,11 +77,19 @@ class FailureReportResponse(BaseModel):
 
 
 class CTSResponse(BaseModel):
-    """The Composite Trust Score for one run, with its derived qualitative trust level."""
+    """The Composite Trust Score for one run, with its derived qualitative trust level.
+
+    ``cts_reported`` (clamped) is the decision number for deploy/no-deploy display;
+    ``cts_raw`` (uncapped) is the analysis number for aggregation/comparison across runs -- see
+    docs/adr/0008-cts-cap-is-policy-not-metric.md.
+    """
 
     run_id: int
-    cts: float
+    cts_raw: float
+    cts_reported: float
     trust_level: str
+    critical_failure: bool
+    critical_failure_modules: list[str] = Field(default_factory=list)
 
 
 class RubricLevelResponse(BaseModel):

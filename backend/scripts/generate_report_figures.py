@@ -101,8 +101,13 @@ def _style_axes(ax: plt.Axes) -> None:
 
 
 def model_order(df: pd.DataFrame) -> list[str]:
-    """Models ordered by mean CTS, descending -- the order every figure uses."""
-    return list(df.groupby("model_label")["cts"].mean().sort_values(ascending=False).index)
+    """Models ordered by mean CTS, descending -- the order every figure uses.
+
+    Ordered by ``cts_raw`` (the uncapped weighted sum), never ``cts_reported``: the reported
+    value is clamped to 30 on a critical failure, so a mean over it is a mean over clamped
+    numbers and not a meaningful ranking (docs/adr/0008-cts-cap-is-policy-not-metric.md).
+    """
+    return list(df.groupby("model_label")["cts_raw"].mean().sort_values(ascending=False).index)
 
 
 def model_colors(models: list[str]) -> dict[str, str]:
@@ -114,8 +119,8 @@ def fig_cts_overview(df: pd.DataFrame, out_dir: Path) -> None:
     colors = model_colors(models)
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5), facecolor=SURFACE)
 
-    means = df.groupby("model_label")["cts"].mean().reindex(models)
-    stds = df.groupby("model_label")["cts"].std().reindex(models).fillna(0)
+    means = df.groupby("model_label")["cts_raw"].mean().reindex(models)
+    stds = df.groupby("model_label")["cts_raw"].std().reindex(models).fillna(0)
     ax1.set_facecolor(SURFACE)
     bars = ax1.bar(
         models,
@@ -138,8 +143,8 @@ def fig_cts_overview(df: pd.DataFrame, out_dir: Path) -> None:
             color=INK_PRIMARY,
         )
     ax1.set_ylim(0, 105)
-    ax1.set_ylabel("Composite Trust Score (mean ± std)", color=INK_SECONDARY)
-    ax1.set_title("Overall CTS by model", color=INK_PRIMARY, fontsize=11, loc="left")
+    ax1.set_ylabel("Composite Trust Score, raw/uncapped (mean ± std)", color=INK_SECONDARY)
+    ax1.set_title("Overall CTS by model (raw, uncapped)", color=INK_PRIMARY, fontsize=11, loc="left")
     ax1.set_xticks(range(len(models)))
     ax1.set_xticklabels(models, rotation=20, ha="right")
     _style_axes(ax1)
@@ -351,8 +356,10 @@ def write_summary_table(df: pd.DataFrame, out_dir: Path) -> None:
         df.groupby("model_label")
         .agg(
             n_runs=("run_id", "count"),
-            mean_cts=("cts", "mean"),
-            std_cts=("cts", "std"),
+            mean_cts_raw=("cts_raw", "mean"),
+            std_cts_raw=("cts_raw", "std"),
+            mean_cts_reported=("cts_reported", "mean"),
+            critical_failure_rate=("critical_failure", "mean"),
         )
         .reindex(models)
     )
@@ -373,14 +380,18 @@ def write_summary_table(df: pd.DataFrame, out_dir: Path) -> None:
 
 def write_headline_summary(df: pd.DataFrame, out_dir: Path) -> None:
     models = model_order(df)
-    means = df.groupby("model_label")["cts"].mean().reindex(models)
+    means = df.groupby("model_label")["cts_raw"].mean().reindex(models)
+    critical_failure_rates = df.groupby("model_label")["critical_failure"].mean().reindex(models)
     score_cols = [f"score_{name}" for name in EVALUATOR_NAMES]
     per_evaluator = df.groupby("model_label")[score_cols].mean().reindex(models)
     per_evaluator.columns = list(EVALUATOR_NAMES)
 
     lines = [
-        f"Best overall (CTS): {means.index[0]} ({means.iloc[0]:.1f})",
-        f"Worst overall (CTS): {means.index[-1]} ({means.iloc[-1]:.1f})",
+        f"Best overall (CTS, raw/uncapped): {means.index[0]} ({means.iloc[0]:.1f})",
+        f"Worst overall (CTS, raw/uncapped): {means.index[-1]} ({means.iloc[-1]:.1f})",
+        "",
+        "Critical-failure rate by model (share of runs clamped to a reported CTS of 30):",
+        *[f"  {label}: {critical_failure_rates.get(label, 0) * 100:.0f}%" for label in models],
         "",
         "Per-evaluator strongest / weakest model:",
     ]

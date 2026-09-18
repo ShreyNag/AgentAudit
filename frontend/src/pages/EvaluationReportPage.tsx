@@ -104,12 +104,22 @@ export default function EvaluationReportPage() {
                 Composite Trust Score
               </p>
               <p className="text-6xl font-bold text-gray-900 dark:text-gray-100">
-                {formatScore(cts.data.cts)}
+                {formatScore(cts.data.cts_reported)}
               </p>
               <p className="text-xs text-gray-500">out of 100</p>
-              <Badge tone={trustLevelTone(cts.data.trust_level)} className="mt-2 text-sm">
-                {cts.data.trust_level}
-              </Badge>
+              <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+                <Badge tone={trustLevelTone(cts.data.trust_level)} className="text-sm">
+                  {cts.data.trust_level}
+                </Badge>
+                {cts.data.critical_failure && (
+                  <Badge tone="danger" className="text-sm">
+                    Critical failure: {cts.data.critical_failure_modules.map(titleCase).join(", ")}
+                  </Badge>
+                )}
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                Uncapped score: {formatScore(cts.data.cts_raw)} / 100
+              </p>
             </CardContent>
           </Card>
 

@@ -91,24 +91,43 @@ export default function ComparePage() {
               </TableHead>
               <TableBody>
                 <TableRow>
-                  <TableCell className="font-medium">CTS</TableCell>
-                  <TableCell>{formatScore(runA.data.cts?.cts)}</TableCell>
-                  <TableCell>{formatScore(runB.data.cts?.cts)}</TableCell>
+                  <TableCell className="font-medium">CTS (raw, uncapped)</TableCell>
+                  <TableCell>{formatScore(runA.data.cts?.cts_raw)}</TableCell>
+                  <TableCell>{formatScore(runB.data.cts?.cts_raw)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="font-medium">CTS (reported)</TableCell>
+                  <TableCell>{formatScore(runA.data.cts?.cts_reported)}</TableCell>
+                  <TableCell>{formatScore(runB.data.cts?.cts_reported)}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell className="font-medium">Trust Level</TableCell>
                   <TableCell>
                     {runA.data.cts && (
-                      <Badge tone={trustLevelTone(runA.data.cts.trust_level)}>
-                        {runA.data.cts.trust_level}
-                      </Badge>
+                      <div className="flex flex-wrap items-center gap-1">
+                        <Badge tone={trustLevelTone(runA.data.cts.trust_level)}>
+                          {runA.data.cts.trust_level}
+                        </Badge>
+                        {runA.data.cts.critical_failure && (
+                          <Badge tone="danger">
+                            Critical failure: {runA.data.cts.critical_failure_modules.join(", ")}
+                          </Badge>
+                        )}
+                      </div>
                     )}
                   </TableCell>
                   <TableCell>
                     {runB.data.cts && (
-                      <Badge tone={trustLevelTone(runB.data.cts.trust_level)}>
-                        {runB.data.cts.trust_level}
-                      </Badge>
+                      <div className="flex flex-wrap items-center gap-1">
+                        <Badge tone={trustLevelTone(runB.data.cts.trust_level)}>
+                          {runB.data.cts.trust_level}
+                        </Badge>
+                        {runB.data.cts.critical_failure && (
+                          <Badge tone="danger">
+                            Critical failure: {runB.data.cts.critical_failure_modules.join(", ")}
+                          </Badge>
+                        )}
+                      </div>
                     )}
                   </TableCell>
                 </TableRow>

@@ -37,7 +37,10 @@ async def evaluate_run(
     outcome = await service.evaluate_run(run_id, get_settings())
     report = await service.get_report(run_id)
     return StandardResponse(
-        message=f"Evaluation complete: CTS {outcome.cts.cts:.2f} ({outcome.cts.trust_level}).",
+        message=(
+            f"Evaluation complete: CTS {outcome.cts.cts_reported:.2f} ({outcome.cts.trust_level})"
+            f", raw {outcome.cts.cts_raw:.2f}."
+        ),
         data=EvaluationReportResponse.model_validate(report),
     )
 
@@ -56,7 +59,14 @@ async def get_cts(run_id: int, service: EvaluationServiceDep) -> StandardRespons
     """Return the Composite Trust Score for ``run_id``."""
     report = await service.get_report(run_id)
     return StandardResponse(
-        data=CTSResponse(run_id=run_id, cts=report.cts, trust_level=trust_level_for(report.cts))
+        data=CTSResponse(
+            run_id=run_id,
+            cts_raw=report.cts_raw,
+            cts_reported=report.cts_reported,
+            trust_level=trust_level_for(report.cts_reported),
+            critical_failure=report.critical_failure,
+            critical_failure_modules=report.critical_failure_modules,
+        )
     )
 
 

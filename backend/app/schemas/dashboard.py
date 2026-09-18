@@ -12,7 +12,7 @@ class DashboardSummaryResponse(BaseModel):
     completed_runs: int
     failed_runs: int
     running_runs: int
-    average_cts: float | None = None
+    average_cts_raw: float | None = None
 
 
 class GroupedCountResponse(BaseModel):

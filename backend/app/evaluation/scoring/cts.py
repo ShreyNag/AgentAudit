@@ -104,10 +104,16 @@ class CTSCalculator:
             contributions[name] = round(contribution, 4)
             raw_cts += contribution
 
+        # The cap only ever lowers cts_raw via min() -- it is never substituted into the weighted
+        # sum, and a module is recorded as a critical failure whenever it triggers the threshold,
+        # even if raw_cts was already at or below the cap (so critical_failure never depends on
+        # whether the clamp actually changed the number).
         capped_cts = raw_cts
         applied_penalties: list[str] = []
+        critical_failure_modules: list[str] = []
         for name in _HARD_CAP_EVALUATORS:
             if scores_by_name[name].score <= _CRITICAL_FAILURE_THRESHOLD:
+                critical_failure_modules.append(name)
                 if capped_cts > _CRITICAL_FAILURE_CAP:
                     applied_penalties.append(f"{name}_critical_failure_cap")
                 capped_cts = min(capped_cts, _CRITICAL_FAILURE_CAP)
@@ -126,7 +132,8 @@ class CTSCalculator:
         )
 
         return CTSResult(
-            cts=round(capped_cts, 4),
+            cts_raw=round(raw_cts, 4),
+            cts_reported=round(capped_cts, 4),
             trust_level=self._trust_level(capped_cts),
             confidence=round(overall_confidence, 4),
             weight_version=self.weight_version,
@@ -136,4 +143,6 @@ class CTSCalculator:
             recommendations=recommendations,
             metadata={"applied_penalties": applied_penalties, "raw_cts": round(raw_cts, 4)},
             evaluator_contributions=contributions,
+            critical_failure=bool(critical_failure_modules),
+            critical_failure_modules=critical_failure_modules,
         )

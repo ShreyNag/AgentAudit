@@ -86,9 +86,17 @@ class FailureAttributionResult(BaseModel):
 
 
 class CTSResult(BaseModel):
-    """The Composite Trust Score and its full supporting context (PROJECT_SPEC_3 SS96)."""
+    """The Composite Trust Score and its full supporting context (PROJECT_SPEC_3 SS96).
 
-    cts: float = Field(ge=0.0, le=100.0)
+    The critical-failure cap (PROJECT_SPEC_3 SS85-86) is a deployment policy layered on top of
+    the metric, not part of the metric itself (docs/adr/0008-cts-cap-is-policy-not-metric.md):
+    ``cts_raw`` is the uncapped weighted sum and is what every analysis/aggregation/comparison
+    across runs must use; ``cts_reported`` is ``cts_raw`` clamped to 30 when a hard-cap evaluator
+    critically failed, and is what deploy/no-deploy decisions and the primary UI display use.
+    """
+
+    cts_raw: float = Field(ge=0.0, le=100.0)
+    cts_reported: float = Field(ge=0.0, le=100.0)
     trust_level: str
     confidence: float = Field(ge=0.0, le=1.0)
     weight_version: str = "1.0"
@@ -98,6 +106,8 @@ class CTSResult(BaseModel):
     recommendations: list[str] = Field(default_factory=list)
     metadata: dict[str, object] = Field(default_factory=dict)
     evaluator_contributions: dict[str, float] = Field(default_factory=dict)
+    critical_failure: bool = False
+    critical_failure_modules: list[str] = Field(default_factory=list)
 
 
 class EvaluationOutcome(BaseModel):

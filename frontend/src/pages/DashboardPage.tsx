@@ -66,9 +66,9 @@ export default function DashboardPage() {
       {summary.data && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <StatCard
-            label="Average CTS"
+            label="Average CTS (raw, uncapped)"
             value={
-              summary.data.average_cts !== null ? formatScore(summary.data.average_cts) : "—"
+              summary.data.average_cts_raw !== null ? formatScore(summary.data.average_cts_raw) : "—"
             }
             icon={Gauge}
           />
