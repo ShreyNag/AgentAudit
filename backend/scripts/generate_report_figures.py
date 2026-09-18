@@ -144,7 +144,9 @@ def fig_cts_overview(df: pd.DataFrame, out_dir: Path) -> None:
         )
     ax1.set_ylim(0, 105)
     ax1.set_ylabel("Composite Trust Score, raw/uncapped (mean ± std)", color=INK_SECONDARY)
-    ax1.set_title("Overall CTS by model (raw, uncapped)", color=INK_PRIMARY, fontsize=11, loc="left")
+    ax1.set_title(
+        "Overall CTS by model (raw, uncapped)", color=INK_PRIMARY, fontsize=11, loc="left"
+    )
     ax1.set_xticks(range(len(models)))
     ax1.set_xticklabels(models, rotation=20, ha="right")
     _style_axes(ax1)

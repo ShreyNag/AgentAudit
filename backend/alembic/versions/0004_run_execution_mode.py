@@ -27,7 +27,9 @@ def upgrade() -> None:
     """
     op.add_column(
         "runs",
-        sa.Column("execution_mode", sa.String(length=20), nullable=False, server_default="benchmark"),
+        sa.Column(
+            "execution_mode", sa.String(length=20), nullable=False, server_default="benchmark"
+        ),
     )
     op.create_index("ix_runs_execution_mode", "runs", ["execution_mode"])
 
