@@ -136,24 +136,59 @@ inconsistent across documents, and `docs/architecture.md`, `docs/deployment.md`,
 `docs/provider-integration-guide.md`, `docs/environment-authoring-guide.md`, and
 `docs/evaluation-engine-guide.md` for the rest of the developer documentation.
 
-## Status
+## Verification status
 
-The backend and frontend test suites pass locally:
+Stated plainly, rather than as a blanket "tests pass" claim:
+
+- **Frontend** (`npm run typecheck && npm run test -- --run`): run and passing (60 tests).
+- **Backend** (`pytest -q`): run and passing (313 tests) as of the most recent change to this
+  repository.
+- **Docker Compose build** (`docker compose up --build`): not yet verified. Run it yourself
+  before relying on the containerized path.
+- **The benchmark pipeline itself has been executed end-to-end against live provider APIs**: 45
+  model x task runs (5 models x 9 benchmark tasks) were each executed, persisted, and evaluated
+  through the real Evaluation Engine with a live Judge call -- none of it mocked. Results are
+  published in the preprint (see Citation below); see "Reproducing the published results" below
+  for the exact configuration and command.
+
+To verify all of the above yourself:
 
 ```bash
 cd backend && pip install -e ".[dev]" && alembic upgrade head && pytest -q
 cd frontend && npm install && npm run typecheck && npm run test -- --run && npm run build
+docker compose up --build
 ```
 
-The framework has also been used end-to-end to run a 45-run evaluation across 5 models and 9
-benchmark tasks.
+## Reproducing the published results
 
+The 45 published runs used:
+
+- **Models evaluated** (`backend/scripts/research_config.example.json`): `gpt-5` (openai),
+  `claude-sonnet-5` (anthropic), `gemini-2.5-flash` (gemini), `sarvam-105b` (sarvam), and
+  `llama-3.3-70b` (groq, `llama-3.3-70b-versatile`) -- 5 models x the 9 seeded benchmark tasks
+  (`backend/app/environments/*/seed_task.py`) = 45 runs.
+- **Judge model**: `claude-sonnet-5` (anthropic), chosen as the strongest/most reliable judge
+  available for consistent, high-quality rubric-based scoring. The same Judge configuration is
+  held constant across every model in the batch (`JUDGE_PROVIDER`/`JUDGE_MODEL` in `backend/.env`
+  are deliberately not overridden per model in `run_benchmark_suite.py`), which is what makes the
+  scores comparable across models in the first place. Note that `claude-sonnet-5` is also one of
+  the 5 evaluated models, so that model's row was judged by itself -- a self-judging case worth
+  weighing when reading its results, not a hidden one.
+- **Single-trial-per-cell design**: each (model, task) pair was run exactly once -- there is no
+  repeated-trial/multi-seed averaging within a cell. Per-cell scores are therefore single-sample
+  point estimates, not means over repeated attempts, and variance across models reflects one draw
+  per model rather than a sampled distribution.
+
+To re-run the benchmark:
+
+```bash
 cd backend
-.\.venv\Scripts\Activate.ps1   
-uvicorn app.main:app --reload 
+cp scripts/research_config.example.json scripts/research_config.json  # fill in your own API keys
+python scripts/run_benchmark_suite.py --config scripts/research_config.json
+python scripts/generate_report_figures.py --results-dir research/results/<batch_id>
+```
 
-cd frontend
-npm run dev
+`research_config.json` holds live API keys and is git-ignored -- never commit it.
 
 ## Citation
 
