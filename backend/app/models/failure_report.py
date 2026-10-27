@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy import JSON, Float, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -18,7 +20,7 @@ class FailureReportModel(Base, TimestampMixin):
         ForeignKey("runs.id", ondelete="RESTRICT"), unique=True, index=True
     )
     primary_failure: Mapped[str] = mapped_column(String(100), index=True)
-    secondary_failures: Mapped[list] = mapped_column(JSON, default=list)
-    affected_components: Mapped[list] = mapped_column(JSON, default=list)
+    secondary_failures: Mapped[list[Any]] = mapped_column(JSON, default=list)
+    affected_components: Mapped[list[Any]] = mapped_column(JSON, default=list)
     diagnostic_reasoning: Mapped[str] = mapped_column(Text)
     confidence: Mapped[float] = mapped_column(Float)

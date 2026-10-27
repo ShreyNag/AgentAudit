@@ -13,6 +13,7 @@ from __future__ import annotations
 import datetime as dt
 import time
 from collections.abc import AsyncIterator
+from typing import Any
 
 import httpx
 from tenacity import (
@@ -149,7 +150,7 @@ class HttpJsonProviderBase(BaseProvider):
                 target = parsedate_to_datetime(header)
                 if target.tzinfo is None:
                     target = target.replace(tzinfo=dt.UTC)
-                return max(0.0, (target - dt.datetime.now(dt.UTC)).total_seconds())
+                return max(0.0, float((target - dt.datetime.now(dt.UTC)).total_seconds()))
             except (TypeError, ValueError):
                 return None
 
@@ -175,10 +176,10 @@ class HttpJsonProviderBase(BaseProvider):
         method: str,
         path: str,
         *,
-        json: dict[str, object] | None = None,
+        json: dict[str, Any] | None = None,
         headers: dict[str, str] | None = None,
         params: dict[str, str] | None = None,
-    ) -> tuple[dict[str, object], float]:
+    ) -> tuple[dict[str, Any], float]:
         """Issue an HTTP request with retry/backoff, returning ``(response_json, latency_seconds)``.
 
         Retries only transient failures (rate limits, timeouts, connection errors) with

@@ -7,6 +7,7 @@ Only application settings belong here; secrets remain in environment variables
 from __future__ import annotations
 
 import datetime as dt
+from typing import Any
 
 from sqlalchemy import JSON, DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column
@@ -26,7 +27,7 @@ class SystemSettingsModel(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     key: Mapped[str] = mapped_column(String(100), unique=True, index=True)
-    value: Mapped[dict] = mapped_column(JSON)
+    value: Mapped[dict[str, Any]] = mapped_column(JSON)
     description: Mapped[str | None] = mapped_column(String(500), nullable=True)
     updated_at: Mapped[dt.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False

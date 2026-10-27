@@ -6,6 +6,8 @@ Ground truth is stored only here and must never be exposed to the Agent Under Te
 
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy import JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -25,6 +27,6 @@ class BenchmarkTaskModel(Base, TimestampMixin):
     difficulty: Mapped[str] = mapped_column(String(50))
     attack_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
     instruction: Mapped[str] = mapped_column(Text)
-    ground_truth: Mapped[dict] = mapped_column(JSON)
-    expected_tool_sequence: Mapped[list] = mapped_column(JSON, default=list)
-    task_metadata: Mapped[dict] = mapped_column("metadata", JSON, default=dict)
+    ground_truth: Mapped[dict[str, Any]] = mapped_column(JSON)
+    expected_tool_sequence: Mapped[list[Any]] = mapped_column(JSON, default=list)
+    task_metadata: Mapped[dict[str, Any]] = mapped_column("metadata", JSON, default=dict)

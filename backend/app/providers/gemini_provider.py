@@ -11,6 +11,7 @@ from __future__ import annotations
 import time
 import uuid
 from collections.abc import AsyncIterator
+from typing import Any
 
 from app.providers.http_provider_base import HttpJsonProviderBase
 from app.providers.schemas import (
@@ -38,7 +39,7 @@ class GeminiProvider(HttpJsonProviderBase):
     def _auth_params(self) -> dict[str, str]:
         return {"key": self.config.api_key}
 
-    def _build_contents(self, request: ProviderRequest) -> list[dict[str, object]]:
+    def _build_contents(self, request: ProviderRequest) -> list[dict[str, Any]]:
         """Build Gemini's ``contents`` turns.
 
         Two shapes the Chat-Completions-style ``ProviderMessage`` list doesn't map onto
@@ -48,7 +49,7 @@ class GeminiProvider(HttpJsonProviderBase):
         multi-tool-call turn is merged into a single following ``function`` turn rather than one
         turn per call.
         """
-        contents: list[dict[str, object]] = []
+        contents: list[dict[str, Any]] = []
         for message in request.messages:
             if message.role == "system":
                 continue  # folded into systemInstruction instead
@@ -60,12 +61,12 @@ class GeminiProvider(HttpJsonProviderBase):
                     }
                 }
                 if contents and contents[-1]["role"] == "function":
-                    contents[-1]["parts"].append(function_response_part)  # type: ignore[union-attr]
+                    contents[-1]["parts"].append(function_response_part)
                 else:
                     contents.append({"role": "function", "parts": [function_response_part]})
                 continue
             if message.role == "assistant" and message.tool_calls:
-                parts: list[dict[str, object]] = []
+                parts: list[dict[str, Any]] = []
                 if message.content:
                     parts.append({"text": message.content})
                 parts.extend(
@@ -78,11 +79,11 @@ class GeminiProvider(HttpJsonProviderBase):
             contents.append({"role": role, "parts": [{"text": message.content}]})
         return contents
 
-    def _build_payload(self, request: ProviderRequest) -> dict[str, object]:
+    def _build_payload(self, request: ProviderRequest) -> dict[str, Any]:
         system_prompt = request.system_prompt or next(
             (m.content for m in request.messages if m.role == "system"), None
         )
-        payload: dict[str, object] = {
+        payload: dict[str, Any] = {
             "contents": self._build_contents(request),
             "generationConfig": {
                 "temperature": (
@@ -111,7 +112,7 @@ class GeminiProvider(HttpJsonProviderBase):
         return payload
 
     def _parse_parts(
-        self, parts: list[dict[str, object]]
+        self, parts: list[dict[str, Any]]
     ) -> tuple[str | None, list[ToolCallSchema]]:
         text_parts: list[str] = []
         tool_calls: list[ToolCallSchema] = []

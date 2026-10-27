@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from app.providers.openai_compatible import OpenAICompatibleProvider
 from app.providers.schemas import ProviderRequest
 
@@ -21,7 +23,7 @@ class OpenAIProvider(OpenAICompatibleProvider):
         "gpt-5-nano": (0.0002, 0.0008),
     }
 
-    def _build_payload(self, request: ProviderRequest) -> dict[str, object]:
+    def _build_payload(self, request: ProviderRequest) -> dict[str, Any]:
         """Adapt the shared Chat Completions payload to GPT-5/o-series constraints.
 
         These models reject the classic ``max_tokens`` field ("...Use 'max_completion_tokens'

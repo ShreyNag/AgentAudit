@@ -97,8 +97,10 @@ def create_app() -> FastAPI:
     app.add_middleware(RequestLoggingMiddleware)
     app.add_middleware(CorrelationIdMiddleware)
 
-    app.add_exception_handler(AgentAuditError, agentaudit_exception_handler)
-    app.add_exception_handler(RequestValidationError, validation_exception_handler)
+    # Starlette types handlers as accepting any Exception, so subclass-specific handlers
+    # need an ignore even though dispatch guarantees the narrower type.
+    app.add_exception_handler(AgentAuditError, agentaudit_exception_handler)  # type: ignore[arg-type]
+    app.add_exception_handler(RequestValidationError, validation_exception_handler)  # type: ignore[arg-type]
     app.add_exception_handler(Exception, unhandled_exception_handler)
 
     app.include_router(api_router, prefix=API_V1_PREFIX)

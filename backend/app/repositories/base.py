@@ -8,6 +8,7 @@ rules belong here or in any subclass (PROJECT_SPEC_2 SS84).
 
 from __future__ import annotations
 
+import builtins
 from collections.abc import Sequence
 from typing import Any, Generic, TypeVar
 
@@ -83,7 +84,7 @@ class BaseRepository(Generic[ModelT]):
         result = await self.session.execute(stmt)
         return int(result.scalar_one())
 
-    async def count_grouped_by(self, column_name: str) -> list[dict[str, Any]]:
+    async def count_grouped_by(self, column_name: str) -> builtins.list[dict[str, Any]]:
         """Return ``[{column_name: value, "count": n}, ...]`` for every distinct value.
 
         Used by dashboard analytics (e.g. runs grouped by provider or environment) without

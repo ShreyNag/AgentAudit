@@ -9,6 +9,8 @@ the only place the specification enumerates what a tool's persisted record shoul
 
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy import JSON, String
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -25,7 +27,7 @@ class BenchmarkToolModel(Base, TimestampMixin):
     description: Mapped[str] = mapped_column(String(1000))
     version: Mapped[str] = mapped_column(String(20), default="1.0")
     environment: Mapped[str] = mapped_column(String(50), index=True)
-    input_schema: Mapped[dict] = mapped_column(JSON)
-    output_schema: Mapped[dict] = mapped_column(JSON)
-    capabilities: Mapped[list] = mapped_column(JSON, default=list)
-    supported_operations: Mapped[list] = mapped_column(JSON, default=list)
+    input_schema: Mapped[dict[str, Any]] = mapped_column(JSON)
+    output_schema: Mapped[dict[str, Any]] = mapped_column(JSON)
+    capabilities: Mapped[list[Any]] = mapped_column(JSON, default=list)
+    supported_operations: Mapped[list[Any]] = mapped_column(JSON, default=list)

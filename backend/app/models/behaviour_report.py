@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy import JSON, Float, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -25,4 +27,4 @@ class BehaviourReportModel(Base, TimestampMixin):
     classification: Mapped[str] = mapped_column(String(50), index=True)
     confidence: Mapped[float] = mapped_column(Float)
     reasoning: Mapped[str] = mapped_column(Text)
-    evidence: Mapped[dict] = mapped_column(JSON, default=dict)
+    evidence: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)

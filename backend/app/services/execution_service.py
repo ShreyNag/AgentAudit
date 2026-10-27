@@ -138,13 +138,14 @@ class ExecutionService(BaseService):
             statistics=result.statistics,
         )
 
-        run_row = await self._run_repository.update(
+        updated_row = await self._run_repository.update(
             run_row.id,
             status=result.status,
             execution_time=result.statistics.execution_time_seconds,
             end_time=dt.datetime.now(dt.UTC),
         )
-        assert run_row is not None  # the row we just created cannot vanish mid-request
+        assert updated_row is not None  # the row we just created cannot vanish mid-request
+        run_row = updated_row
 
         await persist_trace_artifacts(
             trace_repository=self._trace_repository,

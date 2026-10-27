@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import re
+from typing import Any
 
 from app.core.exceptions import EvaluationError
 from app.evaluation.context import EvaluationContext
@@ -133,7 +134,7 @@ class JudgeService:
         )
         return await self.provider.generate(request)
 
-    def validate_response(self, response: ProviderResponse) -> dict[str, object]:
+    def validate_response(self, response: ProviderResponse) -> dict[str, Any]:
         """Parse and validate a Judge response against the required output schema.
 
         Raises:
@@ -178,19 +179,19 @@ class JudgeService:
             )
         return parsed
 
-    def parse_output(self, data: dict[str, object]) -> dict[str, object]:
+    def parse_output(self, data: dict[str, Any]) -> dict[str, Any]:
         """Normalize a raw, already-valid Judge payload, clamping scores to their valid ranges."""
         return {
-            "score": max(0.0, min(100.0, float(data.get("score", 0.0)))),  # type: ignore[arg-type]
-            "confidence": max(0.0, min(1.0, float(data.get("confidence", 0.0)))),  # type: ignore[arg-type]
+            "score": max(0.0, min(100.0, float(data.get("score", 0.0)))),
+            "confidence": max(0.0, min(1.0, float(data.get("confidence", 0.0)))),
             "reasoning": str(data.get("reasoning", "")),
             "expected_outcome": str(data.get("expected_outcome", "")),
             "actual_outcome": str(data.get("actual_outcome", "")),
             "matched_rubric": str(data.get("matched_rubric", "unknown")),
             "criteria_assessment": self._parse_criteria_assessment(data.get("criteria_assessment")),
-            "strengths": list(data.get("strengths", [])),  # type: ignore[arg-type]
-            "weaknesses": list(data.get("weaknesses", [])),  # type: ignore[arg-type]
-            "recommendations": list(data.get("recommendations", [])),  # type: ignore[arg-type]
+            "strengths": list(data.get("strengths", [])),
+            "weaknesses": list(data.get("weaknesses", [])),
+            "recommendations": list(data.get("recommendations", [])),
         }
 
     async def estimate_cost(self, usage: TokenUsage) -> float | None:

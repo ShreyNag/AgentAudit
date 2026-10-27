@@ -11,7 +11,7 @@ import logging
 import sys
 
 import structlog
-from structlog.types import Processor
+from structlog.types import EventDict, Processor, WrappedLogger
 
 from app.middleware.correlation import get_correlation_id
 
@@ -19,8 +19,8 @@ _SENSITIVE_KEYS = frozenset({"api_key", "password", "secret_key", "authorization
 
 
 def _redact_sensitive_values(
-    _logger: object, _method_name: str, event_dict: dict[str, object]
-) -> dict[str, object]:
+    _logger: WrappedLogger, _method_name: str, event_dict: EventDict
+) -> EventDict:
     """Redact known-sensitive keys from a structlog event dict before it is emitted."""
     for key in list(event_dict):
         if key.lower() in _SENSITIVE_KEYS:
@@ -29,8 +29,8 @@ def _redact_sensitive_values(
 
 
 def _inject_correlation_id(
-    _logger: object, _method_name: str, event_dict: dict[str, object]
-) -> dict[str, object]:
+    _logger: WrappedLogger, _method_name: str, event_dict: EventDict
+) -> EventDict:
     """Attach the current request's correlation ID to the log event, if one is set."""
     correlation_id = get_correlation_id()
     if correlation_id is not None:
@@ -74,4 +74,5 @@ def configure_logging(log_level: str = "INFO") -> None:
 
 def get_logger(name: str) -> structlog.stdlib.BoundLogger:
     """Return a structlog logger bound to ``name`` (typically ``__name__``)."""
-    return structlog.get_logger(name)
+    logger: structlog.stdlib.BoundLogger = structlog.get_logger(name)
+    return logger

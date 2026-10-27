@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import time
 from abc import ABC, abstractmethod
+from typing import Any
 
 from app.core.exceptions import EvaluationError
 from app.evaluation.context import EvaluationContext
@@ -70,18 +71,18 @@ class BaseEvaluator(ABC):
         """Extract this evaluator's declared evidence categories from ``context``."""
         return self.evidence_extractor.extract(context, self.evidence_categories)
 
-    def generate_reasoning(self, judge_output: dict[str, object]) -> str:
+    def generate_reasoning(self, judge_output: dict[str, Any]) -> str:
         """Return the Judge's reasoning verbatim (never fabricated or rewritten)."""
         return str(judge_output.get("reasoning", ""))
 
     def compute_confidence(
-        self, context: EvaluationContext, evidence: list[Evidence], judge_output: dict[str, object]
+        self, context: EvaluationContext, evidence: list[Evidence], judge_output: dict[str, Any]
     ) -> float:
         """Combine the Judge's self-reported confidence with an evidence-completeness penalty.
 
         Missing evidence lowers confidence (PROJECT_SPEC_3 SS19/SS68).
         """
-        confidence = float(judge_output.get("confidence", 0.5))  # type: ignore[arg-type]
+        confidence = float(judge_output.get("confidence", 0.5))
         if not evidence:
             confidence *= 0.5
         return max(0.0, min(1.0, confidence))
@@ -108,19 +109,19 @@ class BaseEvaluator(ABC):
 
         return EvaluationResult(
             evaluator_name=self.name,
-            score=judge_output["score"],  # type: ignore[arg-type]
+            score=judge_output["score"],
             confidence=self.compute_confidence(context, evidence, judge_output),
             reasoning=self.generate_reasoning(judge_output),
             expected_outcome=str(judge_output.get("expected_outcome", "")),
             actual_outcome=str(judge_output.get("actual_outcome", "")),
             evidence=evidence,
-            strengths=judge_output.get("strengths", []),  # type: ignore[arg-type]
-            weaknesses=judge_output.get("weaknesses", []),  # type: ignore[arg-type]
-            recommendations=judge_output.get("recommendations", []),  # type: ignore[arg-type]
-            matched_rubric=judge_output.get("matched_rubric", "unknown"),  # type: ignore[arg-type]
+            strengths=judge_output.get("strengths", []),
+            weaknesses=judge_output.get("weaknesses", []),
+            recommendations=judge_output.get("recommendations", []),
+            matched_rubric=judge_output.get("matched_rubric", "unknown"),
             criteria_assessment=[
                 CriterionAssessment(**item)
-                for item in judge_output.get("criteria_assessment", [])  # type: ignore[arg-type]
+                for item in judge_output.get("criteria_assessment", [])
             ],
             metadata=self.metadata(),
             execution_time=time.perf_counter() - start,

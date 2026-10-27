@@ -7,6 +7,8 @@ be compared against.
 
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy import JSON, Boolean, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -22,7 +24,7 @@ class ToolOutputModel(Base, TimestampMixin):
     tool_call_id: Mapped[int] = mapped_column(
         ForeignKey("tool_calls.id", ondelete="RESTRICT"), unique=True, index=True
     )
-    output: Mapped[dict] = mapped_column(JSON, default=dict)
-    ground_truth: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    output: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    ground_truth: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     correct: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
-    output_metadata: Mapped[dict] = mapped_column("metadata", JSON, default=dict)
+    output_metadata: Mapped[dict[str, Any]] = mapped_column("metadata", JSON, default=dict)

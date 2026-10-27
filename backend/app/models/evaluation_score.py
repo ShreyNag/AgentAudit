@@ -6,6 +6,8 @@ migration (PROJECT_SPEC_1 SS86).
 
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy import JSON, Float, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -28,7 +30,7 @@ class EvaluationScoreModel(Base, TimestampMixin):
     reasoning: Mapped[str] = mapped_column(Text)
     expected_outcome: Mapped[str] = mapped_column(Text, default="")
     actual_outcome: Mapped[str] = mapped_column(Text, default="")
-    evidence: Mapped[dict] = mapped_column(JSON, default=dict)
+    evidence: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     rubric_level: Mapped[str] = mapped_column(String(50))
-    matched_criteria: Mapped[list] = mapped_column(JSON, default=list)
-    criteria_assessment: Mapped[list] = mapped_column(JSON, default=list)
+    matched_criteria: Mapped[list[Any]] = mapped_column(JSON, default=list)
+    criteria_assessment: Mapped[list[Any]] = mapped_column(JSON, default=list)

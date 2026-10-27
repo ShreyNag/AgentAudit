@@ -10,6 +10,7 @@ from __future__ import annotations
 import datetime as dt
 import time
 from collections.abc import AsyncIterator
+from typing import Any
 
 from app.providers.http_provider_base import HttpJsonProviderBase
 from app.providers.schemas import (
@@ -43,7 +44,7 @@ class AnthropicProvider(HttpJsonProviderBase):
             "content-type": "application/json",
         }
 
-    def _build_messages(self, request: ProviderRequest) -> list[dict[str, object]]:
+    def _build_messages(self, request: ProviderRequest) -> list[dict[str, Any]]:
         """Build Anthropic's Messages API turns.
 
         Two shapes the Chat-Completions-style ``ProviderMessage`` list doesn't map onto
@@ -53,7 +54,7 @@ class AnthropicProvider(HttpJsonProviderBase):
         rejects consecutive ``user`` turns, which is what one ``tool_result`` per message would
         otherwise produce.
         """
-        messages: list[dict[str, object]] = []
+        messages: list[dict[str, Any]] = []
         for message in request.messages:
             if message.role == "system":
                 continue  # folded into the top-level `system` field instead
@@ -68,14 +69,14 @@ class AnthropicProvider(HttpJsonProviderBase):
                     and messages[-1]["role"] == "user"
                     and messages[-1].get("_tool_results")
                 ):
-                    messages[-1]["content"].append(tool_result_block)  # type: ignore[union-attr]
+                    messages[-1]["content"].append(tool_result_block)
                 else:
                     messages.append(
                         {"role": "user", "content": [tool_result_block], "_tool_results": True}
                     )
                 continue
             if message.role == "assistant" and message.tool_calls:
-                content_blocks: list[dict[str, object]] = []
+                content_blocks: list[dict[str, Any]] = []
                 if message.content:
                     content_blocks.append({"type": "text", "text": message.content})
                 content_blocks.extend(
@@ -94,11 +95,11 @@ class AnthropicProvider(HttpJsonProviderBase):
             entry.pop("_tool_results", None)
         return messages
 
-    def _build_payload(self, request: ProviderRequest) -> dict[str, object]:
+    def _build_payload(self, request: ProviderRequest) -> dict[str, Any]:
         system_prompt = request.system_prompt or next(
             (m.content for m in request.messages if m.role == "system"), None
         )
-        payload: dict[str, object] = {
+        payload: dict[str, Any] = {
             "model": request.model,
             "max_tokens": request.max_tokens or self.config.max_tokens,
             "messages": self._build_messages(request),
@@ -117,7 +118,7 @@ class AnthropicProvider(HttpJsonProviderBase):
         return payload
 
     def _parse_content_blocks(
-        self, blocks: list[dict[str, object]]
+        self, blocks: list[dict[str, Any]]
     ) -> tuple[str | None, list[ToolCallSchema]]:
         text_parts: list[str] = []
         tool_calls: list[ToolCallSchema] = []

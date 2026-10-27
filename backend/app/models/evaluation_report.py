@@ -5,6 +5,8 @@ Individual evaluator scores live in :class:`~app.models.evaluation_score.Evaluat
 
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy import JSON, Boolean, Float, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -31,7 +33,7 @@ class EvaluationReportModel(Base, TimestampMixin):
     cts_raw: Mapped[float] = mapped_column(Float, index=True)
     cts_reported: Mapped[float] = mapped_column(Float, index=True)
     critical_failure: Mapped[bool] = mapped_column(Boolean, default=False)
-    critical_failure_modules: Mapped[list] = mapped_column(JSON, default=list)
+    critical_failure_modules: Mapped[list[Any]] = mapped_column(JSON, default=list)
     planner_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     security_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     integrity_summary: Mapped[str | None] = mapped_column(Text, nullable=True)

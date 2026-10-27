@@ -11,6 +11,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 from collections.abc import AsyncIterator
+from typing import Any
 
 from app.providers.http_provider_base import HttpJsonProviderBase
 from app.providers.schemas import (
@@ -36,12 +37,12 @@ class OpenAICompatibleProvider(HttpJsonProviderBase):
             "Content-Type": "application/json",
         }
 
-    def _build_messages(self, request: ProviderRequest) -> list[dict[str, object]]:
-        messages: list[dict[str, object]] = []
+    def _build_messages(self, request: ProviderRequest) -> list[dict[str, Any]]:
+        messages: list[dict[str, Any]] = []
         if request.system_prompt:
             messages.append({"role": "system", "content": request.system_prompt})
         for message in request.messages:
-            entry: dict[str, object] = {"role": message.role, "content": message.content or None}
+            entry: dict[str, Any] = {"role": message.role, "content": message.content or None}
             if message.name:
                 entry["name"] = message.name
             if message.tool_call_id:
@@ -62,8 +63,8 @@ class OpenAICompatibleProvider(HttpJsonProviderBase):
             messages.append(entry)
         return messages
 
-    def _build_payload(self, request: ProviderRequest) -> dict[str, object]:
-        payload: dict[str, object] = {
+    def _build_payload(self, request: ProviderRequest) -> dict[str, Any]:
+        payload: dict[str, Any] = {
             "model": request.model,
             "messages": self._build_messages(request),
             "temperature": (
@@ -87,10 +88,10 @@ class OpenAICompatibleProvider(HttpJsonProviderBase):
             payload["tool_choice"] = request.tool_choice
         return payload
 
-    def _parse_tool_calls(self, message: dict[str, object]) -> list[ToolCallSchema]:
+    def _parse_tool_calls(self, message: dict[str, Any]) -> list[ToolCallSchema]:
         raw_calls = message.get("tool_calls") or []
         parsed: list[ToolCallSchema] = []
-        for call in raw_calls:  # type: ignore[union-attr]
+        for call in raw_calls:
             function = call["function"]
             arguments = function["arguments"]
             if isinstance(arguments, str):

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy import JSON, Float, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -16,8 +18,8 @@ class ToolCallModel(Base, TimestampMixin):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     run_id: Mapped[int] = mapped_column(ForeignKey("runs.id", ondelete="RESTRICT"), index=True)
     tool_name: Mapped[str] = mapped_column(String(100), index=True)
-    arguments: Mapped[dict] = mapped_column(JSON, default=dict)
-    validated_arguments: Mapped[dict] = mapped_column(JSON, default=dict)
+    arguments: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    validated_arguments: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     execution_order: Mapped[int] = mapped_column(index=True)
     latency: Mapped[float | None] = mapped_column(Float, nullable=True)
     status: Mapped[str] = mapped_column(String(30), default="pending")

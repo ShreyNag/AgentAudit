@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from typing import Any
 
 from sqlalchemy import JSON, Float, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
@@ -24,6 +25,6 @@ class TraceEventModel(Base, TimestampMixin):
     timestamp: Mapped[dt.datetime] = mapped_column(index=True)
     event_type: Mapped[str] = mapped_column(String(50), index=True)
     component: Mapped[str] = mapped_column(String(50))
-    payload: Mapped[dict] = mapped_column(JSON, default=dict)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     latency: Mapped[float | None] = mapped_column(Float, nullable=True)
     status: Mapped[str] = mapped_column(String(30), default="ok")

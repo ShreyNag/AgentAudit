@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy import JSON, String
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -17,6 +19,6 @@ class BenchmarkEnvironmentModel(Base, TimestampMixin):
     name: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     description: Mapped[str] = mapped_column(String(1000))
     version: Mapped[str] = mapped_column(String(20), default="1.0")
-    toolset: Mapped[list] = mapped_column(JSON, default=list)
-    difficulty_levels: Mapped[list] = mapped_column(JSON, default=list)
-    environment_metadata: Mapped[dict] = mapped_column("metadata", JSON, default=dict)
+    toolset: Mapped[list[Any]] = mapped_column(JSON, default=list)
+    difficulty_levels: Mapped[list[Any]] = mapped_column(JSON, default=list)
+    environment_metadata: Mapped[dict[str, Any]] = mapped_column("metadata", JSON, default=dict)

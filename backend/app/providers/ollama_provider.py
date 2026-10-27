@@ -5,6 +5,7 @@ from __future__ import annotations
 import time
 import uuid
 from collections.abc import AsyncIterator
+from typing import Any
 
 from app.providers.http_provider_base import HttpJsonProviderBase
 from app.providers.schemas import (
@@ -29,16 +30,16 @@ class OllamaProvider(HttpJsonProviderBase):
     def _headers(self) -> dict[str, str]:
         return {"Content-Type": "application/json"}
 
-    def _build_messages(self, request: ProviderRequest) -> list[dict[str, object]]:
-        messages: list[dict[str, object]] = []
+    def _build_messages(self, request: ProviderRequest) -> list[dict[str, Any]]:
+        messages: list[dict[str, Any]] = []
         if request.system_prompt:
             messages.append({"role": "system", "content": request.system_prompt})
         for message in request.messages:
             messages.append({"role": message.role, "content": message.content})
         return messages
 
-    def _build_payload(self, request: ProviderRequest) -> dict[str, object]:
-        payload: dict[str, object] = {
+    def _build_payload(self, request: ProviderRequest) -> dict[str, Any]:
+        payload: dict[str, Any] = {
             "model": request.model,
             "messages": self._build_messages(request),
             "stream": False,
@@ -72,10 +73,10 @@ class OllamaProvider(HttpJsonProviderBase):
             payload["format"] = "json"
         return payload
 
-    def _parse_tool_calls(self, message: dict[str, object]) -> list[ToolCallSchema]:
+    def _parse_tool_calls(self, message: dict[str, Any]) -> list[ToolCallSchema]:
         raw_calls = message.get("tool_calls") or []
         parsed: list[ToolCallSchema] = []
-        for call in raw_calls:  # type: ignore[union-attr]
+        for call in raw_calls:
             function = call.get("function", {})
             parsed.append(
                 ToolCallSchema(
@@ -137,7 +138,7 @@ class OllamaProvider(HttpJsonProviderBase):
         except Exception as exc:  # noqa: BLE001 - normalized into the health result
             return HealthCheckResult(provider=self.config.provider, healthy=False, message=str(exc))
 
-        available = {str(item["name"]) for item in body.get("models", [])}  # type: ignore[attr-defined]
+        available = {str(item["name"]) for item in body.get("models", [])}
         wanted = self.config.model
         wanted_with_tag = wanted if ":" in wanted else f"{wanted}:latest"
         if wanted not in available and wanted_with_tag not in available:
