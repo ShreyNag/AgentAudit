@@ -33,7 +33,13 @@ def upgrade() -> None:
     known to have applied."
     """
     op.drop_index("ix_evaluation_reports_cts", table_name="evaluation_reports")
-    op.alter_column("evaluation_reports", "cts", new_column_name="cts_reported")
+    op.alter_column(
+        "evaluation_reports",
+        "cts",
+        new_column_name="cts_reported",
+        existing_type=sa.Float(),
+        existing_nullable=False,
+    )
     op.create_index(
         "ix_evaluation_reports_cts_reported", "evaluation_reports", ["cts_reported"]
     )
@@ -77,5 +83,11 @@ def downgrade() -> None:
     op.drop_column("evaluation_reports", "cts_raw")
 
     op.drop_index("ix_evaluation_reports_cts_reported", table_name="evaluation_reports")
-    op.alter_column("evaluation_reports", "cts_reported", new_column_name="cts")
+    op.alter_column(
+        "evaluation_reports",
+        "cts_reported",
+        new_column_name="cts",
+        existing_type=sa.Float(),
+        existing_nullable=False,
+    )
     op.create_index("ix_evaluation_reports_cts", "evaluation_reports", ["cts"])
